@@ -269,17 +269,13 @@ is same-site with the request's client's "site for cookies", or if the
 request has no client. The request is otherwise "cross-site".
 ~~~
 
-Next we'll modify the algorithm which returns same-site or cross-site for a
-given request.
-Replace lines 3 and 4 with
-~~~
-3.  Let `target` be the origin of `request`'s current url.
-
-4.  If `site` is same-site with `target`, return `same-site`.
-~~~
+Now that we have a new algorithm, we can update any comparision of two sites
+from "have the same registrable domain" (or "is an exact match for") to say
+"is same-site".
 
 Since we're now looking at scheme and would like WebSockets to continue to be
-able to use cookies let's add the following note directly after the above algorithm.
+able to use cookies let's add the following note directly after
+"5.  Return `cross-site`"
 
 ~~~
 Note: The request's URL when establishing a WebSockets connection {{RFC6455}}
