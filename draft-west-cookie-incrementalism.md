@@ -141,7 +141,7 @@ the near-term. User agents should:
    That is, "http://site.example" and "https://site.example" should be
    considered cross-site.
 
-   This is spelled out in more detail in {{#schemeful-samesite}}.
+   This is spelled out in more detail in {{schemeful-samesite}}.
 
 
 # Conventions and Definitions
