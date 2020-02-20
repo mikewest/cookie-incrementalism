@@ -139,7 +139,7 @@ the near-term. User agents should:
 3. Ensure the scheme, as well as the registrable domain, of the
    "site for cookies" and request match when making a same-site decision.
    That is, "http://site.example" and "https://site.example" should be
-   considered cross-site
+   considered cross-site.
 
    This is spelled out in more detail in {{#schemeful-samesite}}.
 
@@ -235,17 +235,18 @@ This is conceptually similar to the requirements put into place for the `__Secur
 
 ## Schemeful Same-Site {#schemeful-samesite}
 
-By using the scheme, as well as the registrable domain, SameSite can help to
-protect https origins against a network attacker that is impersonating an http
-origin with the same registrable domain. Further increasing its CSRF
-protections. To do so we need to modify a number of things:
+By using the scheme, as well as the registrable domain, schemeful same-site can
+help to protect https origins against a network attacker that is impersonating
+an http origin with the same registrable domain, thereby further increasing
+SameSite's CSRF protections. To do so we need to modify a number of things:
 
 First change the definition of "site for cookies" from a registrable domain to
 an origin. In the places where a we return an empty string for a non-existent
 "site for cookies" we should instead return an origin set to a freshly
 generated globally unique identifier.
 
-Then replace the same-site calculation algorithm with the following
+Then replace the same-site calculation algorithm with the following:
+
 ~~~
 Two origins, A and B, are considered same-site if the following algorithm returns true:
 1.  If A and B are both scheme/host/port triples then
@@ -273,19 +274,7 @@ Now that we have a new algorithm, we can update any comparision of two sites
 from "have the same registrable domain" (or "is an exact match for") to say
 "is same-site".
 
-Since we're now looking at scheme and would like WebSockets to continue to be
-able to use cookies let's add the following note directly after
-"5.  Return `cross-site`"
-
-~~~
-Note: The request's URL when establishing a WebSockets connection {{RFC6455}}
-has scheme "http" or "https", rather than "ws" or "wss". See {{FETCH}} which
-maps schemes when constructing the request. This allows same-site cookies to be
-sent with WebSockets.
-~~~
-
-Finally, since we're citing RFC6455 it should be added to the informative section.
-
+Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets. We should do the same.
 
 # Security and Privacy Considerations
 
