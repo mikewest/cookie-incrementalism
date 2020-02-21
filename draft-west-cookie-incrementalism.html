@@ -1,613 +1,1429 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Incrementally Better Cookies</title>
+<meta content="Mike West" name="author">
+<meta content="
+       This document proposes three changes to cookies inspired by the properties of
+the HTTP State Tokens mechanism proposed in  .
+First, cookies should be treated as  SameSite=Lax  by default. Second, cookies
+that explicitly assert  SameSite=None  in order to enable cross-site delivery
+should also be marked as  Secure . Third, same-site should take the scheme of
+the sites into account. 
+    " name="description">
+<meta content="xml2rfc 2.39.0" name="generator">
+<meta content="Internet-Draft" name="keyword">
+<meta content="draft-west-cookie-incrementalism-latest" name="ietf.draft">
+<link href="draft-west-cookie-incrementalism.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@import url('https://martinthomson.github.io/i-d-template/fonts.css');
 
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-<head profile="http://www.w3.org/2006/03/hcard http://dublincore.org/documents/2008/08/04/dc-html/">
-  <meta http-equiv="Content-Type" content="text/html; charset=us-ascii" />
-
-  <title>Incrementally Better Cookies</title>
-
-  
-<style type="text/css">/*<![CDATA[*/
-
+html {
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --small-font-size: 14.5px;
+}
 body {
-  font: 16px "Helvetica Neue","Open Sans",Helvetica,Calibri,sans-serif;
-  color: #333;
-  font-size-adjust: 0.5;
-  line-height: 24px;
-  margin: 75px auto;
   max-width: 624px;
+  margin: 75px auto;
   padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
 }
 
-.title, .filename, h1, h2, h3, h4, h5 {
-  font: 16px "Roboto Condensed","Helvetica Neue","Open Sans",Helvetica,Calibri,sans-serif;
-  font-size-adjust: 0.5;
-  font-weight: bold;
-  color: #333;
-  line-height: 100%;
-  margin: 1.2em 0 0.3em;
-}
-.title, #rfc\.title h1 { font-size: 32px; }
-h1, section h1, h2, section h2, section h3, nav h2 { font-size: 20px; }
-h3, section h4, h4, section h5 { font-size: 16px; }
-h1 a[href], h2 a[href], h3 a[href], h4 a[href] {
-  color: #333;
-}
-
-table {
-  margin-left: 0em;
-  border-collapse: collapse;
-}
-th {
-  text-align: left;
-  border-bottom: 2px solid #ddd;
-}
-td {
-  border-top: 1px solid #ddd;
-  vertical-align: top;
-}
-tr:nth-child(2n+1) > td,
-tr:nth-child(2n+1) > th {
-  background-color: #f9f9f9;
-}
-td.reference {
-  max-width: 200px;
-  border-top: none;
-  padding-right: 1em;
-}
-.right {
-  text-align: right;
-}
-
-
-table.header, table#rfc\.headerblock {
-  width: 100%;
-}
-table.header td, table#rfc\.headerblock td {
-  border: none;
-  background-color: transparent;
-  color: black;
-  padding: 0;
-}
-.filename {
-  display: block;
-  color: rgb(119, 119, 119);
-  font-size: 20px;
-  font-weight: normal;
-  line-height: 100%;
-  margin: 10px 0 32px;
-}
-#rfc\.abstract+p, #rfc\.abstract+p code, #rfc\.abstract+p samp, #rfc\.abstract+p tt {
-  font-size: 20px;
-  line-height: 28px;
-}
-
-samp, tt, code, pre, span.tt {
-  font-size: 13.5px;
-  font-family: Consolas, monospace;
-  font-size-adjust: none;
-}
-pre {
-  background-color: #eee;
-  border: 1px solid #ddd;
-  overflow-x: auto;
-  padding: 5px;
-  margin: 5px;
-}
-.figure, caption {
-  font-style: italic;
-  margin: 0 1.5em;
-  text-align: left;
-}
-
-address {
-  margin: 16px 2px;
-  line-height: 20px;
-}
-.vcard {
-  font-style: normal;
-}
-.vcardline {
-  display: block;
-}
-.vcardline .fn, address b {
-  font-weight: normal;
-}
-.vcardline .hidden {
+.ears {
   display: none;
 }
 
-dl {
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+#title {
+  padding: 1em 0 0.2em;
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 26px;
+}
+h4, h5, h6 {
+  font-size: 18px;
+  line-height: 22px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p, #abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 18px;
+  line-height: 24px;
+}
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div, span {
+  position: relative;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 1em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
   margin-left: 1em;
 }
-dl.dl-horizontal: {
-  margin-left: 0;
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
 }
 dl > dt {
   float: left;
   margin-right: 1em;
 }
-dl.nohang > dt {
-  float: none;
-}
 dl > dd {
-  margin-bottom: .5em;
+  margin-bottom: .8em;
+  min-height: 1.3em;
 }
-dl.compact > dd {
+dl.compact > dd, .dlCompact > dd {
   margin-bottom: 0em;
 }
 dl > dd > dl {
   margin-top: 0.5em;
   margin-bottom: 0em;
 }
-ul.empty {
-  list-style-type: none;
-}
-ul.empty li {
-  margin-top: .5em;
-}
 
-hr {
-  border: 0;
-  border-top: 1px solid #eee;
-}
-hr.noprint {
-  display: none;
-}
-
-a {
+/* links */
+a, a[href].selfRef:hover {
   text-decoration: none;
 }
+a[href].selfRef {
+  color: var(--text-color);
+}
 a[href] {
-  color: #2a6496;
+  color: var(--link-color);
 }
 a[href]:hover {
-  background-color: #eee;
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
 }
 
-p, ol, ul, li {
-  padding: 0;
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px 'Oxygen Mono', monospace;
 }
-p {
+pre {
+  border: 1px solid var(--line-color);
+  line-height: 17px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
   margin: 0.5em 0;
 }
-ol, ul {
-  margin: 0.2em 0 0.2em 2em;
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
 }
-li {
-  margin: 0.2em 0;
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
 }
-address {
-  font-style: normal;
+@media screen {
+  pre {
+    display: inline-block;
+    overflow-x: auto;
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  pre + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
 }
 
-ul.toc ul {
-  margin: 0 0 0 2em;
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
 }
-ul.toc li {
-  list-style: none;
+blockquote {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5em 0.75em;
+}
+th {
+  text-align: left;
+  background-color: #eee;
+}
+tr:nth-child(2n) > td {
+  background-color: var(--background-color);
+}
+tr:nth-child(2n+1) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody tr:nth-child(2n) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody tr:nth-child(2n+1) > td {
+  background-color: var(--background-color);
+}
+table caption {
+  font-style: italic;
+  margin: 0.3em 0;
+  padding: 0;
+  text-align: left;
+}
+table p {
+  /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
+     be allowed within tables more generally, it would be far better to select on a class. */
   margin: 0;
 }
 
-@media screen and (min-width: 924px) {
-  body {
-    padding-right: 350px;
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  visibility: hidden;
+  user-select: none;
+}
+a.pilcrow[href] { color: #ddd; }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media screen {
+  :hover > a.pilcrow {
+    visibility: visible;
   }
-  body>ul.toc, body>#rfc\.toc {
+  a.pilcrow:hover {
+    background-color: transparent;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 8em;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  margin: 0;
+  clear: left;
+  float: left;
+  text-align: right;
+}
+#identifiers dd {
+  margin: 0 0 0 calc(1em + var(--identifier-width));
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 600px) {
+  .index ul {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  .index ul ul {
+    column-count: 1;
+    column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 600px) {
+  #authors-addresses {
+    display: relative;
+    padding: 32px 0 0;
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #name-authors-addresses {
+    position: absolute;
+    top: 0px;
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+  }
+}
+
+/* temporary notes */
+.rfcEditorRemove::before {
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  padding: 0.2em;
+  content: "The RFC Editor will remove this note";
+  color: #b76427;
+  background-color: rgba(249, 232, 105, 0.3);
+}
+.rfcEditorRemove {
+  position: relative;
+  padding-top: 1.8em;
+  background-color: rgba(249, 232, 105, 0.3);
+  border-radius: 3px;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 953px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 954px) {
+  body {
+    padding-right: 380px;
+  }
+  #toc {
     position: fixed;
     bottom: 0;
     right: 0;
-    right: calc(50vw - 500px);
-    width: 300px;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
     z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
     overflow: auto;
     overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
-  body>#rfc\.toc {
-    top: 55px;
+  #toc nav > ul  {
+    margin-bottom: 2em;
   }
-  body>ul.toc {
-    top: 100px;
-  }
-
-  ul.toc {
+  #toc ul {
     margin: 0 0 0 4px;
-    font-size: 12px;
-    line-height: 20px;
+    font-size: var(--small-font-size);
   }
-  ul.toc ul {
-    margin-left: 1.2em;
+  #toc ul p, #toc ul li {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
   }
 }
 
-.github-fork-ribbon-wrapper {
-  display: none;
-}
-@media screen and (min-width: 800px) {
-  /* "Fork me on GitHub" CSS ribbon based on
-   * https://github.com/simonwhitaker/github-fork-ribbon-css
-   */
-  .github-fork-ribbon {
-    position: absolute;
-    padding: 2px 0;
-    background-color: #a00;
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.15));
-    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.5);
-    font: 700 12px "Helvetica Neue", Helvetica, Arial, sans-serif;
-
-    pointer-events: auto;
-
-    top: 38px;
-    right: -45px;
-
-    transform: rotate(45deg);
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
   }
-
-  .github-fork-ribbon a[href],
-  .github-fork-ribbon a[href]:hover {
-    color: #fff;
-    background-color: transparent;
-    text-decoration: none;
-    text-shadow: 0 -1px rgba(0, 0, 0, 0.5);
-    text-align: center;
-
-    width: 190px;
-    line-height: 18px;
-
-    display: inline-block;
-    padding: 2px 0;
-
-    border: 1.5px dotted #fff;
-    border-color: rgba(255, 255, 255, 0.6);
+  @top-center {
+    content: normal;
+    border: none;
   }
-
-  .github-fork-ribbon-wrapper {
-    display: block;
-    width: 130px;
-    height: 130px;
-    position: absolute;
-    overflow: hidden;
-    top: 0; right: 0;
-    z-index: 2;
-    pointer-events: none;
+  @top-right {
+    content: normal;
+    border: none;
   }
 }
-@media screen and (min-width: 1000px) {
-  .github-fork-ribbon-wrapper {
-    position: fixed;
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table td.text-left,
+table th.text-left {
+  text-align: left;
+}
+table td.text-center,
+table th.text-center {
+  text-align: center;
+}
+table td.text-right,
+table th.text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Provide table alignment support.  We can't use the alignX classes above
+   since they do unwanted things with caption and other styling. */
+table.right {
+ margin-left: auto;
+ margin-right: 0;
+}
+table.center {
+ margin-left: auto;
+ margin-right: auto;
+}
+table.left {
+ margin-left: 0;
+ margin-right: auto;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+
+@media print {
+  .toplink {
+    display: none;
   }
-/*]]>*/</style>
-<meta name="viewport" content="initial-scale=1.0">
 
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
 
-  <link href="#rfc.toc" rel="Contents">
-<link href="#rfc.section.1" rel="Chapter" title="1 Introduction">
-<link href="#rfc.section.2" rel="Chapter" title="2 Conventions and Definitions">
-<link href="#rfc.section.2.1" rel="Chapter" title="2.1 Conformance">
-<link href="#rfc.section.2.2" rel="Chapter" title="2.2 Syntax">
-<link href="#rfc.section.3" rel="Chapter" title="3 Monkey-Patches against RFC6265bis">
-<link href="#rfc.section.3.1" rel="Chapter" title="3.1 &#8220;Lax&#8221; by Default">
-<link href="#rfc.section.3.2" rel="Chapter" title="3.2 Requiring &#8220;Secure&#8221; for &#8220;SameSite=None&#8221;">
-<link href="#rfc.section.4" rel="Chapter" title="4 Security and Privacy Considerations">
-<link href="#rfc.section.4.1" rel="Chapter" title="4.1 CSRF">
-<link href="#rfc.section.4.2" rel="Chapter" title="4.2 Secure Transport">
-<link href="#rfc.section.4.3" rel="Chapter" title="4.3 Tracking">
-<link href="#rfc.section.5" rel="Chapter" title="5 Implementation Considerations">
-<link href="#rfc.section.5.1" rel="Chapter" title="5.1 Sequencing">
-<link href="#rfc.section.5.2" rel="Chapter" title="5.2 Deployment">
-<link href="#rfc.section.6" rel="Chapter" title="6 IANA Considerations">
-<link href="#rfc.references" rel="Chapter" title="7 References">
-<link href="#rfc.references.1" rel="Chapter" title="7.1 Normative References">
-<link href="#rfc.references.2" rel="Chapter" title="7.2 Informative References">
-<link href="#rfc.acknowledgments" rel="Chapter">
-<link href="#rfc.authors" rel="Chapter">
+  /* Avoid page breaks inside dl and author address entries */
+  dd {
+    page-break-before: avoid;
+  }
+  .vcard {
+    page-break-inside: avoid;
+  }
 
-
-  <meta name="generator" content="xml2rfc version 2.14.1 - https://tools.ietf.org/tools/xml2rfc" />
-  <link rel="schema.dct" href="http://purl.org/dc/terms/" />
-
-  <meta name="dct.creator" content="West, M." />
-  <meta name="dct.identifier" content="urn:ietf:id:draft-west-cookie-incrementalism-latest" />
-  <meta name="dct.issued" scheme="ISO8601" content="2019-07" />
-  <meta name="dct.abstract" content="This document proposes two changes to cookies inspired by the properties of the HTTP State Tokens mechanism proposed in " />
-  <meta name="description" content="This document proposes two changes to cookies inspired by the properties of the HTTP State Tokens mechanism proposed in " />
-
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+</style>
+<link href="rfc-local.css" rel="stylesheet" type="text/css">
 </head>
-
 <body>
-
-  <table class="header">
-    <tbody>
-    
-    	<tr>
-<td class="left">Network Working Group</td>
-<td class="right">M. West</td>
-</tr>
-<tr>
+<script src="metadata.min.js"></script>
+<table class="ears">
+<thead><tr>
 <td class="left">Internet-Draft</td>
-<td class="right">Google</td>
-</tr>
-<tr>
-<td class="left">Intended status: Standards Track</td>
-<td class="right">May 7, 2019</td>
-</tr>
-<tr>
-<td class="left">Expires: November 8, 2019</td>
-<td class="right"></td>
-</tr>
-
-    	
-    </tbody>
-  </table>
-
-  <p class="title">Incrementally Better Cookies<br />
-  <span class="filename">draft-west-cookie-incrementalism-latest</span></p>
-  
-  <h1 id="rfc.abstract"><a href="#rfc.abstract">Abstract</a></h1>
-<p>This document proposes two changes to cookies inspired by the properties of the HTTP State Tokens mechanism proposed in <a href="#I-D.west-http-state-tokens" class="xref">[I-D.west-http-state-tokens]</a>. First, cookies should be treated as <samp>SameSite=Lax</samp> by default. Second, cookies that explicitly assert <samp>SameSite=None</samp> in order to enable cross-site delivery should also be marked as <samp>Secure</samp>.</p>
-<h1 id="rfc.status"><a href="#rfc.status">Status of This Memo</a></h1>
-<p>This Internet-Draft is submitted in full conformance with the provisions of BCP 78 and BCP 79.</p>
-<p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF).  Note that other groups may also distribute working documents as Internet-Drafts.  The list of current Internet-Drafts is at https://datatracker.ietf.org/drafts/current/.</p>
-<p>Internet-Drafts are draft documents valid for a maximum of six months and may be updated, replaced, or obsoleted by other documents at any time.  It is inappropriate to use Internet-Drafts as reference material or to cite them other than as "work in progress."</p>
-<p>This Internet-Draft will expire on November 8, 2019.</p>
-<h1 id="rfc.copyrightnotice"><a href="#rfc.copyrightnotice">Copyright Notice</a></h1>
-<p>Copyright (c) 2019 IETF Trust and the persons identified as the document authors.  All rights reserved.</p>
-<p>This document is subject to BCP 78 and the IETF Trust's Legal Provisions Relating to IETF Documents (https://trustee.ietf.org/license-info) in effect on the date of publication of this document.  Please review these documents carefully, as they describe your rights and restrictions with respect to this document.  Code Components extracted from this document must include Simplified BSD License text as described in Section 4.e of the Trust Legal Provisions and are provided without warranty as described in the Simplified BSD License.</p>
-
-  
-  <hr class="noprint" />
-  <h1 class="np" id="rfc.toc"><a href="#rfc.toc">Table of Contents</a></h1>
-  <ul class="toc">
-
-  	<li>1.   <a href="#rfc.section.1">Introduction</a>
+<td class="center">cookie-incrementalism</td>
+<td class="right">February 2020</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">West</td>
+<td class="center">Expires 24 August 2020</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Network Working Group</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-west-cookie-incrementalism-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2020-02-21" class="published">21 February 2020</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Standards Track</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2020-08-24">24 August 2020</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">M. West</div>
+<div class="org">Google</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Incrementally Better Cookies</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document proposes three changes to cookies inspired by the properties of
+the HTTP State Tokens mechanism proposed in <span>[<a href="#I-D.west-http-state-tokens" class="xref">I-D.west-http-state-tokens</a>]</span>.
+First, cookies should be treated as <code>SameSite=Lax</code> by default. Second, cookies
+that explicitly assert <code>SameSite=None</code> in order to enable cross-site delivery
+should also be marked as <code>Secure</code>. Third, same-site should take the scheme of
+the sites into account.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 24 August 2020.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2020 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Simplified BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Simplified BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a><a href="#section-toc.1-1.1.1" class="pilcrow">¶</a></p>
 </li>
-<li>2.   <a href="#rfc.section.2">Conventions and Definitions</a>
+<li class="toc ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-conventions-and-definitions" class="xref">Conventions and Definitions</a><a href="#section-toc.1-1.2.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="xref">2.1</a>.  <a href="#name-conformance" class="xref">Conformance</a><a href="#section-toc.1-1.2.2.1.1" class="pilcrow">¶</a></p>
 </li>
-<ul><li>2.1.   <a href="#rfc.section.2.1">Conformance</a>
+<li class="toc ulEmpty" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="xref">2.2</a>.  <a href="#name-syntax" class="xref">Syntax</a><a href="#section-toc.1-1.2.2.2.1" class="pilcrow">¶</a></p>
 </li>
-<li>2.2.   <a href="#rfc.section.2.2">Syntax</a>
+</ul>
 </li>
-</ul><li>3.   <a href="#rfc.section.3">Monkey-Patches against RFC6265bis</a>
+<li class="toc ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-monkey-patches-against-rfc6" class="xref">Monkey-Patches against RFC6265bis</a><a href="#section-toc.1-1.3.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-lax-by-default" class="xref">"Lax" by Default</a><a href="#section-toc.1-1.3.2.1.1" class="pilcrow">¶</a></p>
 </li>
-<ul><li>3.1.   <a href="#rfc.section.3.1">&#8220;Lax&#8221; by Default</a>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-requiring-secure-for-samesi" class="xref">Requiring "Secure" for "SameSite=None"</a><a href="#section-toc.1-1.3.2.2.1" class="pilcrow">¶</a></p>
 </li>
-<li>3.2.   <a href="#rfc.section.3.2">Requiring &#8220;Secure&#8221; for &#8220;SameSite=None&#8221;</a>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-schemeful-same-site" class="xref">Schemeful Same-Site</a><a href="#section-toc.1-1.3.2.3.1" class="pilcrow">¶</a></p>
 </li>
-</ul><li>4.   <a href="#rfc.section.4">Security and Privacy Considerations</a>
+</ul>
 </li>
-<ul><li>4.1.   <a href="#rfc.section.4.1">CSRF</a>
+<li class="toc ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-security-and-privacy-consid" class="xref">Security and Privacy Considerations</a><a href="#section-toc.1-1.4.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-csrf" class="xref">CSRF</a><a href="#section-toc.1-1.4.2.1.1" class="pilcrow">¶</a></p>
 </li>
-<li>4.2.   <a href="#rfc.section.4.2">Secure Transport</a>
+<li class="toc ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="xref">4.2</a>.  <a href="#name-secure-transport" class="xref">Secure Transport</a><a href="#section-toc.1-1.4.2.2.1" class="pilcrow">¶</a></p>
 </li>
-<li>4.3.   <a href="#rfc.section.4.3">Tracking</a>
+<li class="toc ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="xref">4.3</a>.  <a href="#name-tracking" class="xref">Tracking</a><a href="#section-toc.1-1.4.2.3.1" class="pilcrow">¶</a></p>
 </li>
-</ul><li>5.   <a href="#rfc.section.5">Implementation Considerations</a>
+</ul>
 </li>
-<ul><li>5.1.   <a href="#rfc.section.5.1">Sequencing</a>
+<li class="toc ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-implementation-consideratio" class="xref">Implementation Considerations</a><a href="#section-toc.1-1.5.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-sequencing" class="xref">Sequencing</a><a href="#section-toc.1-1.5.2.1.1" class="pilcrow">¶</a></p>
 </li>
-<li>5.2.   <a href="#rfc.section.5.2">Deployment</a>
+<li class="toc ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-deployment" class="xref">Deployment</a><a href="#section-toc.1-1.5.2.2.1" class="pilcrow">¶</a></p>
 </li>
-</ul><li>6.   <a href="#rfc.section.6">IANA Considerations</a>
+</ul>
 </li>
-<li>7.   <a href="#rfc.references">References</a>
+<li class="toc ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-iana-considerations" class="xref">IANA Considerations</a><a href="#section-toc.1-1.6.1" class="pilcrow">¶</a></p>
 </li>
-<ul><li>7.1.   <a href="#rfc.references.1">Normative References</a>
+<li class="toc ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-references" class="xref">References</a><a href="#section-toc.1-1.7.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="xref">7.1</a>.  <a href="#name-normative-references" class="xref">Normative References</a><a href="#section-toc.1-1.7.2.1.1" class="pilcrow">¶</a></p>
 </li>
-<li>7.2.   <a href="#rfc.references.2">Informative References</a>
+<li class="toc ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="xref">7.2</a>.  <a href="#name-informative-references" class="xref">Informative References</a><a href="#section-toc.1-1.7.2.2.1" class="pilcrow">¶</a></p>
 </li>
-</ul><li><a href="#rfc.acknowledgments">Acknowledgments</a>
+</ul>
 </li>
-<li><a href="#rfc.authors">Author's Address</a>
+<li class="toc ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-appendix.a" class="xref"></a><a href="#name-acknowledgments" class="xref">Acknowledgments</a><a href="#section-toc.1-1.8.1" class="pilcrow">¶</a></p>
 </li>
-
-
-  </ul>
-
-  <h1 id="rfc.section.1">
-<a href="#rfc.section.1">1.</a> <a href="#introduction" id="introduction">Introduction</a>
-</h1>
-<p id="rfc.section.1.p.1">The HTTP State Tokens proposal (<a href="#I-D.west-http-state-tokens" class="xref">[I-D.west-http-state-tokens]</a>) aims to replace cookies with a state management mechanism that has better security and privacy properties. That proposal is somewhat aspirational: it&#8217;s going to take a long time to come to agreement on the exact contours of a cookie replacement, and an even longer time to actually do so.</p>
-<p id="rfc.section.1.p.2">While we&#8217;re debating the details of a new state management primitive, it seems quite reasonable to reevaluate some aspects of the existing primitive: cookies. When we can find consensus on some aspect of HTTP State Tokens, we can apply those aspirations to cookies, driving incremental improvements to state management in the status quo.</p>
-<p id="rfc.section.1.p.3">Based on conversations at <a href="#HTTP-Workshop-2019" class="xref">[HTTP-Workshop-2019]</a> and elsewhere, I&#8217;d suggest that we have something like agreement on at least two principles:</p>
-<p></p>
-
-<ol>
-<li>HTTP requests should not carry state along with cross-site requests by default (see Section 8.2 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>).</li>
-<li>HTTP requests should not carry state over non-secure channels (see Section 8.3 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>, and <a href="#RFC7258" class="xref">[RFC7258]</a>).</li>
+<li class="toc ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-appendix.b" class="xref"></a><a href="#name-authors-address" class="xref">Author's Address</a><a href="#section-toc.1-1.9.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">The HTTP State Tokens proposal (<span>[<a href="#I-D.west-http-state-tokens" class="xref">I-D.west-http-state-tokens</a>]</span>) aims to replace cookies with
+a state management mechanism that has better security and privacy properties. That proposal is
+somewhat aspirational: it's going to take a long time to come to agreement on the exact contours
+of a cookie replacement, and an even longer time to actually do so.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">While we're debating the details of a new state management primitive, it seems quite reasonable to
+reevaluate some aspects of the existing primitive: cookies. When we can find consensus on some
+aspect of HTTP State Tokens, we can apply those aspirations to cookies, driving incremental
+improvements to state management in the status quo.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">Based on conversations at <span>[<a href="#HTTP-Workshop-2019" class="xref">HTTP-Workshop-2019</a>]</span> and elsewhere, I'd suggest that we have something
+like agreement on at least two principles:<a href="#section-1-3" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal" id="section-1-4">
+        <li id="section-1-4.1">HTTP requests should not carry state along with cross-site requests by default (see Section 8.2
+of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>).<a href="#section-1-4.1" class="pilcrow">¶</a>
+</li>
+<li id="section-1-4.2">HTTP requests should not carry state over non-secure channels (see Section 8.3 of
+<span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>, and <span>[<a href="#RFC7258" class="xref">RFC7258</a>]</span>).<a href="#section-1-4.2" class="pilcrow">¶</a>
+</li>
 </ol>
-<p id="rfc.section.1.p.5">With those principles in mind, this document proposes two changes that seem possible to deploy in the near-term. User agents should:</p>
-<p></p>
-
-<ol>
-<li>Treat the lack of an explicit <samp>SameSite</samp> attribute as <samp>SameSite=Lax</samp>. That is, the <samp>Set-Cookie</samp> value <samp>key=value</samp> will produce a cookie equivalent to <samp>key=value; SameSite=Lax</samp>. Cookies that require cross-site delivery can explicitly opt-into such behavior by asserting <samp>SameSite=None</samp> when creating a cookie.  <br><br> This is spelled out in more detail in <a href="#lax-default" class="xref">Section 3.1</a>.</li>
-<li>Require the <samp>Secure</samp> attribute to be set for any cookie which asserts <samp>SameSite=None</samp> (similar conceptually to the behavior for the <samp>__Secure-</samp> prefix). That is, the <samp>Set-Cookie</samp> value <samp>key=value; SameSite=None; Secure</samp> will be accepted, while <samp>key=value; SameSite=None</samp> will be rejected.  <br><br> This is spelled out in more detail in <a href="#require-secure" class="xref">Section 3.2</a>.</li>
+<p id="section-1-5">With those principles in mind, this document proposes three changes that seem possible to deploy in
+the near-term. User agents should:<a href="#section-1-5" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal" id="section-1-6">
+        <li id="section-1-6.1">
+          <p id="section-1-6.1.1">Treat the lack of an explicit <code>SameSite</code> attribute as <code>SameSite=Lax</code>. That is, the <code>Set-Cookie</code>
+value <code>key=value</code> will produce a cookie equivalent to <code>key=value; SameSite=Lax</code>. Cookies that
+require cross-site delivery can explicitly opt-into such behavior by asserting <code>SameSite=None</code>
+when creating a cookie.<a href="#section-1-6.1.1" class="pilcrow">¶</a></p>
+<p id="section-1-6.1.2">
+This is spelled out in more detail in <a href="#lax-default" class="xref">Section 3.1</a>.<a href="#section-1-6.1.2" class="pilcrow">¶</a></p>
+</li>
+<li id="section-1-6.2">
+          <p id="section-1-6.2.1">Require the <code>Secure</code> attribute to be set for any cookie which asserts <code>SameSite=None</code> (similar
+conceptually to the behavior for the <code>__Secure-</code> prefix). That is, the <code>Set-Cookie</code> value
+<code>key=value; SameSite=None; Secure</code> will be accepted, while <code>key=value; SameSite=None</code> will be
+rejected.<a href="#section-1-6.2.1" class="pilcrow">¶</a></p>
+<p id="section-1-6.2.2">
+This is spelled out in more detail in <a href="#require-secure" class="xref">Section 3.2</a>.<a href="#section-1-6.2.2" class="pilcrow">¶</a></p>
+</li>
+<li id="section-1-6.3">
+          <p id="section-1-6.3.1">Ensure the scheme, as well as the registrable domain, of the
+"site for cookies" and request match when making a same-site decision.
+That is, "http://site.example" and "https://site.example" should be
+considered cross-site.<a href="#section-1-6.3.1" class="pilcrow">¶</a></p>
+<p id="section-1-6.3.2">
+This is spelled out in more detail in <a href="#schemeful-samesite" class="xref">Section 3.3</a>.<a href="#section-1-6.3.2" class="pilcrow">¶</a></p>
+</li>
 </ol>
-<h1 id="rfc.section.2">
-<a href="#rfc.section.2">2.</a> <a href="#conventions-and-definitions" id="conventions-and-definitions">Conventions and Definitions</a>
-</h1>
-<h1 id="rfc.section.2.1">
-<a href="#rfc.section.2.1">2.1.</a> <a href="#conformance" id="conformance">Conformance</a>
-</h1>
-<p id="rfc.section.2.1.p.1">The key words &#8220;MUST&#8221;, &#8220;MUST NOT&#8221;, &#8220;REQUIRED&#8221;, &#8220;SHALL&#8221;, &#8220;SHALL NOT&#8221;, &#8220;SHOULD&#8221;, &#8220;SHOULD NOT&#8221;, &#8220;RECOMMENDED&#8221;, &#8220;NOT RECOMMENDED&#8221;, &#8220;MAY&#8221;, and &#8220;OPTIONAL&#8221; in this document are to be interpreted as described in BCP&#160;14 <a href="#RFC2119" class="xref">[RFC2119]</a> <a href="#RFC8174" class="xref">[RFC8174]</a> when, and only when, they appear in all capitals, as shown here.</p>
-<h1 id="rfc.section.2.2">
-<a href="#rfc.section.2.2">2.2.</a> <a href="#syntax" id="syntax">Syntax</a>
-</h1>
-<p id="rfc.section.2.2.p.1">This document adjusts some syntax from <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>, and in doing so, relies upon the Augmented Backus-Naur Form (ABNF) notation of <a href="#RFC5234" class="xref">[RFC5234]</a>.</p>
-<h1 id="rfc.section.3">
-<a href="#rfc.section.3">3.</a> <a href="#monkey-patches-against-rfc6265bis" id="monkey-patches-against-rfc6265bis">Monkey-Patches against RFC6265bis</a>
-</h1>
-<h1 id="rfc.section.3.1">
-<a href="#rfc.section.3.1">3.1.</a> <a href="#lax-default" id="lax-default">&#8220;Lax&#8221; by Default</a>
-</h1>
-<p id="rfc.section.3.1.p.1">The processing algorithm in Section 5.3.7 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a> treats the absence of a <samp>SameSite</samp> attribute in a <samp>Set-Cookie</samp> header as equivalent to the presence of <samp>SameSite=None</samp>. Cookies are therefore available for cross-site delivery by default, and developers may opt-into more security by setting some other value explicitly. Ideally, we&#8217;d invert that such that developers who accepted the risks of cross-site delivery (see Section 8.2 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>) could opt into them, while developers who didn&#8217;t make any explicit choice would be protected by default.</p>
-<p id="rfc.section.3.1.p.2">We could accomplish this goal by first altering the processing algorithm, replacing the current step 1:</p>
+</section>
+</div>
+<div id="conventions-and-definitions">
+<section id="section-2">
+      <h2 id="name-conventions-and-definitions">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-conventions-and-definitions" class="section-name selfRef">Conventions and Definitions</a>
+      </h2>
+<div id="conformance">
+<section id="section-2.1">
+        <h3 id="name-conformance">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-conformance" class="section-name selfRef">Conformance</a>
+        </h3>
+<p id="section-2.1-1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED",
+"MAY", and "OPTIONAL" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="syntax">
+<section id="section-2.2">
+        <h3 id="name-syntax">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-syntax" class="section-name selfRef">Syntax</a>
+        </h3>
+<p id="section-2.2-1">This document adjusts some syntax from <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>, and in doing so, relies upon the Augmented
+Backus-Naur Form (ABNF) notation of <span>[<a href="#RFC5234" class="xref">RFC5234</a>]</span>.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="monkey-patches-against-rfc6265bis">
+<section id="section-3">
+      <h2 id="name-monkey-patches-against-rfc6">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-monkey-patches-against-rfc6" class="section-name selfRef">Monkey-Patches against RFC6265bis</a>
+      </h2>
+<div id="lax-default">
+<section id="section-3.1">
+        <h3 id="name-lax-by-default">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-lax-by-default" class="section-name selfRef">"Lax" by Default</a>
+        </h3>
+<p id="section-3.1-1">The processing algorithm in Section 5.3.7 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> treats the absence of a <code>SameSite</code>
+attribute in a <code>Set-Cookie</code> header as equivalent to the presence of <code>SameSite=None</code>. Cookies are
+therefore available for cross-site delivery by default, and developers may opt-into more security by
+setting some other value explicitly. Ideally, we'd invert that such that developers who accepted the
+risks of cross-site delivery (see Section 8.2 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>) could opt into them, while
+developers who didn't make any explicit choice would be protected by default.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-2">We could accomplish this goal by first altering the processing algorithm, replacing the current step
+1:<a href="#section-3.1-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.1-3">
 <pre>
 1.  Let "enforcement" be "None".
-</pre>
-<p id="rfc.section.3.1.p.3">with the following two steps:</p>
+</pre><a href="#section-3.1-3" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1-4">with the following two steps:<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.1-5">
 <pre>
 1.  Let "enforcement" be "Lax".
 
 2.  If cookie-av's attribute-value is a case-insensitive
     match for "None", set "enforcement" to "None".
-</pre>
-<p id="rfc.section.3.1.p.4">And then by, altering step 13 of the cookie storage model (Section 5.4 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>) from:</p>
+</pre><a href="#section-3.1-5" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1-6">And then by, altering step 13 of the cookie storage model (Section 5.4 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>) from:<a href="#section-3.1-6" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.1-7">
 <pre>
 13. If the cookie-attribute-list contains an attribute
     with an attribute-name of "SameSite", set the cookie's
     same-site-flag to attribute-value (i.e. either "Strict",
     "Lax", or "None"). Otherwise, set the cookie's
     same-site-flag to "None".
-</pre>
-<p id="rfc.section.3.1.p.5">to:</p>
+</pre><a href="#section-3.1-7" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1-8">to:<a href="#section-3.1-8" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.1-9">
 <pre>
 13. If the cookie-attribute-list contains an attribute
     with an attribute-name of "SameSite", set the
     cookie's same-site-flag to attribute-value. Otherwise,
     set the cookie's same-site-flag to "Lax".
-</pre>
-<p id="rfc.section.3.1.p.6">This would have the effect of mapping the default behavior in the absence of an explicit <samp>SameSite</samp> attribute, as well as the presence of any unknown <samp>SameSite</samp> value, to the &#8220;Lax&#8221; behavior, protecting developers by making cross-site delivery an explicit choice, as opposed to an implicit default.</p>
-<h1 id="rfc.section.3.2">
-<a href="#rfc.section.3.2">3.2.</a> <a href="#require-secure" id="require-secure">Requiring &#8220;Secure&#8221; for &#8220;SameSite=None&#8221;</a>
-</h1>
-<p id="rfc.section.3.2.p.1">Cookies sent over plaintext HTTP are visible to anyone on the network. As section 8.3 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a> points out, this visibility exposes substantial amounts of data to network attackers.  We know, for example, that long-lived and stable cookies have enabled pervasive monitoring <a href="#RFC7258" class="xref">[RFC7258]</a> in the past (see Google&#8217;s PREF cookie <a href="#pref-cookie" class="xref">[pref-cookie]</a>), and we know that a secure transport layer provides significant confidentiality protections against this kind of attack.</p>
-<p id="rfc.section.3.2.p.2">We can, to a reasonable extent, mitigate this threat by ensuring that cookies intended for cross-site delivery (and therefore likely to be more prevalent on the wire than cookies scoped down to same-site requests) require secure transport.</p>
-<p id="rfc.section.3.2.p.3">That is, we can require that any cookie which asserts <samp>SameSite=None</samp> must also assert the <samp>Secure</samp> attribute (Section 4.1.2.5 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>) by altering the storage model defined in Section 5.4 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>, inserting the following step after the existing step 14:</p>
+</pre><a href="#section-3.1-9" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1-10">This would have the effect of mapping the default behavior in the absence of an explicit <code>SameSite</code>
+attribute, as well as the presence of any unknown <code>SameSite</code> value, to the "Lax" behavior,
+protecting developers by making cross-site delivery an explicit choice, as opposed to an implicit
+default.<a href="#section-3.1-10" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="require-secure">
+<section id="section-3.2">
+        <h3 id="name-requiring-secure-for-samesi">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-requiring-secure-for-samesi" class="section-name selfRef">Requiring "Secure" for "SameSite=None"</a>
+        </h3>
+<p id="section-3.2-1">Cookies sent over plaintext HTTP are visible to anyone on the network. As section 8.3 of
+<span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> points out, this visibility exposes substantial amounts of data to network attackers.
+We know, for example, that long-lived and stable cookies have enabled pervasive monitoring
+<span>[<a href="#RFC7258" class="xref">RFC7258</a>]</span> in the past (see Google's PREF cookie <span>[<a href="#pref-cookie" class="xref">pref-cookie</a>]</span>), and we know that a secure
+transport layer provides significant confidentiality protections against this kind of attack.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">We can, to a reasonable extent, mitigate this threat by ensuring that cookies intended for
+cross-site delivery (and therefore likely to be more prevalent on the wire than cookies scoped down
+to same-site requests) require secure transport.<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2-3">That is, we can require that any cookie which asserts <code>SameSite=None</code> must also assert the <code>Secure</code>
+attribute (Section 4.1.2.5 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>) by altering the storage model defined in Section 5.4 of
+<span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>, inserting the following step after the existing step 14:<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.2-4">
 <pre>
 15. If the cookie's "same-site-flag" is "None", abort
     these steps and ignore the cookie entirely unless
     the cookie's secure-only-flag is true.
-</pre>
-<p id="rfc.section.3.2.p.4">This is conceptually similar to the requirements put into place for the <samp>__Secure-</samp> prefix (Section 4.1.3.1 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>).</p>
-<h1 id="rfc.section.4">
-<a href="#rfc.section.4">4.</a> <a href="#security-and-privacy-considerations" id="security-and-privacy-considerations">Security and Privacy Considerations</a>
-</h1>
-<h1 id="rfc.section.4.1">
-<a href="#rfc.section.4.1">4.1.</a> <a href="#csrf" id="csrf">CSRF</a>
-</h1>
-<p><samp>SameSite</samp> is a reasonably robust defense against some classes of cross-site request forgery attacks, as described in Section 8.8.1 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>, but developers need to opt-into its protections in order for them to have any effect. That is, developers are vulnerable to CSRF attacks by default, and must do some work to shift themselves into a more defensible position.</p>
-<p id="rfc.section.4.1.p.2">The change proposed in <a href="#lax-default" class="xref">Section 3.1</a> would invert that requirement, placing the burden on the small number of developers who are building services that require state in cross-site requests.  Those developers would be empowered to opt-into the status quo&#8217;s less-secure model, while developers who don&#8217;t intend for their projects to be embedded in cross-site contexts are protected by default.</p>
-<h1 id="rfc.section.4.2">
-<a href="#rfc.section.4.2">4.2.</a> <a href="#secure-transport" id="secure-transport">Secure Transport</a>
-</h1>
-<p id="rfc.section.4.2.p.1">As discussed in Section 8.3 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>, cookies delivered over plaintext channels are exposed to intermediaries, and thereby enable pervasive monitoring <a href="#RFC7258" class="xref">[RFC7258]</a>. The change proposed in <a href="#require-secure" class="xref">Section 3.2</a> above would set secure transport as a baseline requirement for all stateful cross-site requests, thereby reducing the risk that these cookies can be cataloged or modified by network attackers.</p>
-<p id="rfc.section.4.2.p.2">Requiring secure transport for cookies intended for cross-site usage has the exciting secondary effect of increasing pressure on entities that produce embeddable content to migrate their products to HTTPS. That has security benefits for those third-party products themselves, but also has the effect of removing the potential of mixed content (<a href="#mixed-content" class="xref">[mixed-content]</a>) as a blocker to first-party migration to HTTPS.</p>
-<p id="rfc.section.4.2.p.3">Note that in the long term, it seems quite reasonable to take the additional step of requiring the <samp>Secure</samp> attribute for all cookies, regardless of their <samp>SameSite</samp> value. That would have more substantial impact on pervasive monitoring and network attackers generally. This document&#8217;s proposal limits itself to <samp>SameSite=None</samp> because that seems like a low-hanging, high-value change that&#8217;s deployable in the near term. User agents are encouraged to find additional subsets for which <samp>Secure</samp> can be required.</p>
-<h1 id="rfc.section.4.3">
-<a href="#rfc.section.4.3">4.3.</a> <a href="#tracking" id="tracking">Tracking</a>
-</h1>
-<p id="rfc.section.4.3.p.1">The proposals in this document do not in themselves mitigate the privacy risks described in Section 7.1 of <a href="#RFC6265bis" class="xref">[RFC6265bis]</a>. Entities who wish to use cookies to track user activity from cross-site contexts can continue to do so by setting cookies that declare themselves as <samp>SameSite=None</samp>.</p>
-<p id="rfc.section.4.3.p.2">Requiring that explicit declaration, however, gives user agents the ability to easily distinguish cookies used for stateful cross-site requests from those with narrower scope. After the change proposed in <a href="#lax-default" class="xref">Section 3.1</a>, only those cookies that make an explicit <samp>SameSite=None</samp> declaration can be directly used for cross-site tracking. It may make sense for user agents to use that information to give users different controls for these cookies, or to apply different policies for expiration and delivery.</p>
-<h1 id="rfc.section.5">
-<a href="#rfc.section.5">5.</a> <a href="#implementation-considerations" id="implementation-considerations">Implementation Considerations</a>
-</h1>
-<h1 id="rfc.section.5.1">
-<a href="#rfc.section.5.1">5.1.</a> <a href="#sequencing" id="sequencing">Sequencing</a>
-</h1>
-<p id="rfc.section.5.1.p.1">The steps described in this document don&#8217;t need to be taken at the same time. It&#8217;s quite possible that it will be less disruptive to deploy <samp>SameSite=Lax</samp> as a default first, and then to require the <samp>Secure</samp> attribute for any explicitly <samp>SameSite=None</samp> cookie as a subsequent step.</p>
-<p id="rfc.section.5.1.p.2">User agents are encouraged to adopt these recommendations in whatever order they believe will lead to the widest, most expedient deployment.</p>
-<h1 id="rfc.section.5.2">
-<a href="#rfc.section.5.2">5.2.</a> <a href="#deployment" id="deployment">Deployment</a>
-</h1>
-<p id="rfc.section.5.2.p.1">It&#8217;s possible that a middle-ground between <samp>SameSite=Lax</samp> and <samp>SameSite=None</samp> could be a better balance between doing what developers want by default, and mitigating CSRF by default.  <a href="#I-D.west-cookie-samesite-firstparty" class="xref">[I-D.west-cookie-samesite-firstparty]</a> explores the possibility of integrating First-Party Sets <a href="#first-party-set" class="xref">[first-party-set]</a> with the <samp>SameSite</samp> attribute in order to allow entities that shard themselves across multiple registrable domains to maintain stateful communication between them (to support single-sign on, for example).</p>
-<p id="rfc.section.5.2.p.2">It&#8217;s possible that user agents who support First-Party Sets could reduce the deployment overhead for developers, and increase the robustness of a site&#8217;s CSRF defense for cross-site-but-not-cross-party cookies by defaulting to something like that document&#8217;s <samp>FirstPartyLax</samp> instead of <samp>Lax</samp>.</p>
-<h1 id="rfc.section.6">
-<a href="#rfc.section.6">6.</a> <a href="#iana-considerations" id="iana-considerations">IANA Considerations</a>
-</h1>
-<p id="rfc.section.6.p.1">This document has no IANA actions.</p>
-<h1 id="rfc.references">
-<a href="#rfc.references">7.</a> References</h1>
-<h1 id="rfc.references.1">
-<a href="#rfc.references.1">7.1.</a> Normative References</h1>
-<table><tbody>
-<tr>
-<td class="reference"><b id="RFC2119">[RFC2119]</b></td>
-<td class="top">
-<a>Bradner, S.</a>, "<a href="https://tools.ietf.org/html/rfc2119">Key words for use in RFCs to Indicate Requirement Levels</a>", BCP 14, RFC 2119, DOI 10.17487/RFC2119, March 1997.</td>
-</tr>
-<tr>
-<td class="reference"><b id="RFC5234">[RFC5234]</b></td>
-<td class="top">
-<a>Crocker, D.</a> and <a>P. Overell</a>, "<a href="https://tools.ietf.org/html/rfc5234">Augmented BNF for Syntax Specifications: ABNF</a>", STD 68, RFC 5234, DOI 10.17487/RFC5234, January 2008.</td>
-</tr>
-<tr>
-<td class="reference"><b id="RFC6265bis">[RFC6265bis]</b></td>
-<td class="top">
-<a>Barth, A.</a> and <a>M. West</a>, "<a href="https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03">Cookies: HTTP State Management Mechanism</a>", Internet-Draft draft-ietf-httpbis-rfc6265bis-03, April 2019.</td>
-</tr>
-<tr>
-<td class="reference"><b id="RFC8174">[RFC8174]</b></td>
-<td class="top">
-<a>Leiba, B.</a>, "<a href="https://tools.ietf.org/html/rfc8174">Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</a>", BCP 14, RFC 8174, DOI 10.17487/RFC8174, May 2017.</td>
-</tr>
-</tbody></table>
-<h1 id="rfc.references.2">
-<a href="#rfc.references.2">7.2.</a> Informative References</h1>
-<table><tbody>
-<tr>
-<td class="reference"><b id="first-party-set">[first-party-set]</b></td>
-<td class="top">
-<a title="Google">West, M.</a>, "<a href="https://mikewest.github.io/first-party-sets/">First-Party Sets</a>", n.d..</td>
-</tr>
-<tr>
-<td class="reference"><b id="HTTP-Workshop-2019">[HTTP-Workshop-2019]</b></td>
-<td class="top">
-<a title="Fastly">Nottingham, M.</a>, "<a href="https://github.com/HTTPWorkshop/workshop2019/wiki/Report">HTTP Workshop 2019: Report</a>", April 2019.</td>
-</tr>
-<tr>
-<td class="reference"><b id="I-D.west-cookie-samesite-firstparty">[I-D.west-cookie-samesite-firstparty]</b></td>
-<td class="top">
-<a title="Google">West, M.</a>, "<a href="https://tools.ietf.org/html/draft-west-cookie-samesite-firstparty-00">First-Party Sets and SameSite Cookies</a>", May 2019.</td>
-</tr>
-<tr>
-<td class="reference"><b id="I-D.west-http-state-tokens">[I-D.west-http-state-tokens]</b></td>
-<td class="top">
-<a>West, M.</a>, "<a href="https://tools.ietf.org/html/draft-west-http-state-tokens-00">HTTP State Tokens</a>", Internet-Draft draft-west-http-state-tokens-00, March 2019.</td>
-</tr>
-<tr>
-<td class="reference"><b id="mixed-content">[mixed-content]</b></td>
-<td class="top">
-<a title="Google">West, M.</a>, "<a href="https://w3c.github.io/webappsec-mixed-content/">Mixed Content</a>", n.d..</td>
-</tr>
-<tr>
-<td class="reference"><b id="pref-cookie">[pref-cookie]</b></td>
-<td class="top">
-<a>Soltani, A.</a>, <a>Peterson, A.</a> and <a>B. Gellman</a>, "<a href="https://www.washingtonpost.com/news/the-switch/wp/2013/12/10/nsa-uses-google-cookies-to-pinpoint-targets-for-hacking/">NSA uses Google cookies to pinpoint targets for hacking</a>", December 2013.</td>
-</tr>
-<tr>
-<td class="reference"><b id="RFC7258">[RFC7258]</b></td>
-<td class="top">
-<a>Farrell, S.</a> and <a>H. Tschofenig</a>, "<a href="https://tools.ietf.org/html/rfc7258">Pervasive Monitoring Is an Attack</a>", BCP 188, RFC 7258, DOI 10.17487/RFC7258, May 2014.</td>
-</tr>
-</tbody></table>
-<h1 id="rfc.acknowledgments"><a href="#rfc.acknowledgments">Acknowledgments</a></h1>
-<p id="rfc.section.A.p.1">Conversations with a number of folks at 2019&#8217;s HTTP Workshop helped me clarify my thinking around the incremental improvements we can make to cookies. In particular, Martin Thomson and Anne van Kesteren provided insightful feedback.</p>
-<h1 id="rfc.authors"><a href="#rfc.authors">Author's Address</a></h1>
-<div class="avoidbreak">
-  <address class="vcard">
-	<span class="vcardline">
-	  <span class="fn">Mike West</span> 
-	  <span class="n hidden">
-		<span class="family-name">West</span>
-	  </span>
-	</span>
-	<span class="org vcardline">Google</span>
-	<span class="adr">
-	  
-	  <span class="vcardline">
-		<span class="locality"></span> 
-		<span class="region"></span>
-		<span class="code"></span>
-	  </span>
-	  <span class="country-name vcardline"></span>
-	</span>
-	<span class="vcardline">EMail: <a href="mailto:mkwst@google.com">mkwst@google.com</a></span>
-
-<span class="vcardline">URI: <a href="https://www.mikewest.org/">https://www.mikewest.org/</a></span>
-
-  </address>
+</pre><a href="#section-3.2-4" class="pilcrow">¶</a>
 </div>
+<p id="section-3.2-5">This is conceptually similar to the requirements put into place for the <code>__Secure-</code> prefix (Section
+4.1.3.1 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>).<a href="#section-3.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="schemeful-samesite">
+<section id="section-3.3">
+        <h3 id="name-schemeful-same-site">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-schemeful-same-site" class="section-name selfRef">Schemeful Same-Site</a>
+        </h3>
+<p id="section-3.3-1">By using the scheme, as well as the registrable domain, schemeful same-site can
+help to protect https origins against a network attacker that is impersonating
+an http origin with the same registrable domain, thereby further increasing
+SameSite's CSRF protections. To do so we need to modify a number of things:<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">First change the definition of "site for cookies" from a registrable domain to
+an origin. In the places where a we return an empty string for a non-existent
+"site for cookies" we should instead return an origin set to a freshly
+generated globally unique identifier.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3-3">Then replace the same-site calculation algorithm with the following:<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.3-4">
+<pre>
+Two origins, A and B, are considered same-site if the following algorithm returns true:
+1.  If A and B are both scheme/host/port triples then
 
+    1.  If A's scheme does not equal B's scheme, return false.
+
+    2.  Let hostA be A's host, and hostB be B's host.
+
+        1.  If hostA equals hostB and hostA's registrable domain is null, return true.
+
+        2.  If hostA's registrable domain equals hostB's registrable domain and is non-null, return true.
+
+2.  If A and B are both the same globally unique identifier, return true.
+
+3.  Return false.
+
+Note: The port component of the origins is not considered.
+
+A request is "same-site" if its target's URI's origin
+is same-site with the request's client's "site for cookies", or if the
+request has no client. The request is otherwise "cross-site".
+</pre><a href="#section-3.3-4" class="pilcrow">¶</a>
+</div>
+<p id="section-3.3-5">Now that we have a new algorithm, we can update any comparision of two sites
+from "have the same registrable domain" (or "is an exact match for") to say
+"is same-site".<a href="#section-3.3-5" class="pilcrow">¶</a></p>
+<p id="section-3.3-6">Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets. We should do the same.<a href="#section-3.3-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="security-and-privacy-considerations">
+<section id="section-4">
+      <h2 id="name-security-and-privacy-consid">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-security-and-privacy-consid" class="section-name selfRef">Security and Privacy Considerations</a>
+      </h2>
+<div id="csrf">
+<section id="section-4.1">
+        <h3 id="name-csrf">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-csrf" class="section-name selfRef">CSRF</a>
+        </h3>
+<p id="section-4.1-1"><code>SameSite</code> is a reasonably robust defense against some classes of cross-site request forgery
+attacks, as described in Section 8.8.1 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>, but developers need to opt-into its
+protections in order for them to have any effect. That is, developers are vulnerable to CSRF
+attacks by default, and must do some work to shift themselves into a more defensible position.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">The change proposed in <a href="#lax-default" class="xref">Section 3.1</a> would invert that requirement, placing the burden on the
+small number of developers who are building services that require state in cross-site requests.
+Those developers would be empowered to opt-into the status quo's less-secure model, while developers
+who don't intend for their projects to be embedded in cross-site contexts are protected by default.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="secure-transport">
+<section id="section-4.2">
+        <h3 id="name-secure-transport">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-secure-transport" class="section-name selfRef">Secure Transport</a>
+        </h3>
+<p id="section-4.2-1">As discussed in Section 8.3 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>, cookies delivered over plaintext channels are
+exposed to intermediaries, and thereby enable pervasive monitoring <span>[<a href="#RFC7258" class="xref">RFC7258</a>]</span>. The change proposed
+in <a href="#require-secure" class="xref">Section 3.2</a> above would set secure transport as a baseline requirement for all stateful
+cross-site requests, thereby reducing the risk that these cookies can be cataloged or modified by
+network attackers.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2-2">Requiring secure transport for cookies intended for cross-site usage has the exciting secondary
+effect of increasing pressure on entities that produce embeddable content to migrate their
+products to HTTPS. That has security benefits for those third-party products themselves, but also
+has the effect of removing the potential of mixed content (<span>[<a href="#mixed-content" class="xref">mixed-content</a>]</span>) as a blocker to
+first-party migration to HTTPS.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<p id="section-4.2-3">Note that in the long term, it seems quite reasonable to take the additional step of requiring the
+<code>Secure</code> attribute for all cookies, regardless of their <code>SameSite</code> value. That would have more
+substantial impact on pervasive monitoring and network attackers generally. This document's proposal
+limits itself to <code>SameSite=None</code> because that seems like a low-hanging, high-value change that's
+deployable in the near term. User agents are encouraged to find additional subsets for which
+<code>Secure</code> can be required.<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="tracking">
+<section id="section-4.3">
+        <h3 id="name-tracking">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-tracking" class="section-name selfRef">Tracking</a>
+        </h3>
+<p id="section-4.3-1">The proposals in this document do not in themselves mitigate the privacy risks described in Section
+7.1 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>. Entities who wish to use cookies to track user activity from cross-site
+contexts can continue to do so by setting cookies that declare themselves as <code>SameSite=None</code>.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<p id="section-4.3-2">Requiring that explicit declaration, however, gives user agents the ability to easily distinguish
+cookies used for stateful cross-site requests from those with narrower scope. After the change
+proposed in <a href="#lax-default" class="xref">Section 3.1</a>, only those cookies that make an explicit <code>SameSite=None</code> declaration
+can be directly used for cross-site tracking. It may make sense for user agents to use that
+information to give users different controls for these cookies, or to apply different policies for
+expiration and delivery.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="implementation-considerations">
+<section id="section-5">
+      <h2 id="name-implementation-consideratio">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-implementation-consideratio" class="section-name selfRef">Implementation Considerations</a>
+      </h2>
+<div id="sequencing">
+<section id="section-5.1">
+        <h3 id="name-sequencing">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-sequencing" class="section-name selfRef">Sequencing</a>
+        </h3>
+<p id="section-5.1-1">The steps described in this document don't need to be taken at the same time. It's quite possible
+that it will be less disruptive to deploy <code>SameSite=Lax</code> as a default first, then to require the
+<code>Secure</code> attribute for any explicitly <code>SameSite=None</code> cookie as a subsequent step, and then
+deploying schemeful same-site in a final step.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-2">User agents are encouraged to adopt these recommendations in whatever order they believe will lead
+to the widest, most expedient deployment.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="deployment">
+<section id="section-5.2">
+        <h3 id="name-deployment">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-deployment" class="section-name selfRef">Deployment</a>
+        </h3>
+<p id="section-5.2-1">It's possible that a middle-ground between <code>SameSite=Lax</code> and <code>SameSite=None</code> could be a better
+balance between doing what developers want by default, and mitigating CSRF by default.
+<span>[<a href="#I-D.west-cookie-samesite-firstparty" class="xref">I-D.west-cookie-samesite-firstparty</a>]</span> explores the possibility of integrating First-Party Sets
+<span>[<a href="#first-party-set" class="xref">first-party-set</a>]</span> with the <code>SameSite</code> attribute in order to allow entities that shard themselves
+across multiple registrable domains to maintain stateful communication between them (to support
+single-sign on, for example).<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">It's possible that user agents who support First-Party Sets could reduce the deployment overhead
+for developers, and increase the robustness of a site's CSRF defense for
+cross-site-but-not-cross-party cookies by defaulting to something like that document's
+<code>FirstPartyLax</code> instead of <code>Lax</code>.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-6">
+      <h2 id="name-iana-considerations">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-6-1">This document has no IANA actions.<a href="#section-6-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<section id="section-7">
+      <h2 id="name-references">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<section id="section-7.1">
+        <h3 id="name-normative-references">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+<dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc2119">https://www.rfc-editor.org/info/rfc2119</a>&gt;</span>. </dd>
+<dt id="RFC5234">[RFC5234]</dt>
+<dd>
+<span class="refAuthor">Crocker, D., Ed.</span><span class="refAuthor"> and P. Overell</span>, <span class="refTitle">"Augmented BNF for Syntax Specifications: ABNF"</span>, <span class="seriesInfo">STD 68</span>, <span class="seriesInfo">RFC 5234</span>, <span class="seriesInfo">DOI 10.17487/RFC5234</span>, <time datetime="2008-01">January 2008</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc5234">https://www.rfc-editor.org/info/rfc5234</a>&gt;</span>. </dd>
+<dt id="RFC6265bis">[RFC6265bis]</dt>
+<dd>
+<span class="refAuthor">West, M.</span><span class="refAuthor"> and J. Wilander</span>, <span class="refTitle">"Cookies: HTTP State Management Mechanism"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-rfc6265bis-05</span>, <time datetime="2020-02-05">5 February 2020</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-httpbis-rfc6265bis-05.txt">http://www.ietf.org/internet-drafts/draft-ietf-httpbis-rfc6265bis-05.txt</a>&gt;</span>. </dd>
+<dt id="RFC8174">[RFC8174]</dt>
+<dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8174">https://www.rfc-editor.org/info/rfc8174</a>&gt;</span>. </dd>
+</dl>
+</section>
+<section id="section-7.2">
+        <h3 id="name-informative-references">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="first-party-set">[first-party-set]</dt>
+<dd>
+<span class="refAuthor">West, M.</span>, <span class="refTitle">"First-Party Sets"</span>, <time datetime="n.d.">n.d.</time>, <span>&lt;<a href="https://mikewest.github.io/first-party-sets/">https://mikewest.github.io/first-party-sets/</a>&gt;</span>. </dd>
+<dt id="HTTP-Workshop-2019">[HTTP-Workshop-2019]</dt>
+<dd>
+<span class="refAuthor">Nottingham, M.</span>, <span class="refTitle">"HTTP Workshop 2019: Report"</span>, <time datetime="2019-04">April 2019</time>, <span>&lt;<a href="https://github.com/HTTPWorkshop/workshop2019/wiki/Report">https://github.com/HTTPWorkshop/workshop2019/wiki/Report</a>&gt;</span>. </dd>
+<dt id="I-D.west-cookie-samesite-firstparty">[I-D.west-cookie-samesite-firstparty]</dt>
+<dd>
+<span class="refAuthor">West, M.</span>, <span class="refTitle">"First-Party Sets and SameSite Cookies"</span>, <time datetime="2019-05">May 2019</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-west-cookie-samesite-firstparty-00">https://tools.ietf.org/html/draft-west-cookie-samesite-firstparty-00</a>&gt;</span>. </dd>
+<dt id="I-D.west-http-state-tokens">[I-D.west-http-state-tokens]</dt>
+<dd>
+<span class="refAuthor">West, M.</span>, <span class="refTitle">"HTTP State Tokens"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-west-http-state-tokens-00</span>, <time datetime="2019-03-28">28 March 2019</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-west-http-state-tokens-00.txt">http://www.ietf.org/internet-drafts/draft-west-http-state-tokens-00.txt</a>&gt;</span>. </dd>
+<dt id="mixed-content">[mixed-content]</dt>
+<dd>
+<span class="refAuthor">West, M.</span>, <span class="refTitle">"Mixed Content"</span>, <time datetime="n.d.">n.d.</time>, <span>&lt;<a href="https://w3c.github.io/webappsec-mixed-content/">https://w3c.github.io/webappsec-mixed-content/</a>&gt;</span>. </dd>
+<dt id="pref-cookie">[pref-cookie]</dt>
+<dd>
+<span class="refAuthor">Soltani, A.</span><span class="refAuthor">, Peterson, A.</span><span class="refAuthor">, and B. Gellman</span>, <span class="refTitle">"NSA uses Google cookies to pinpoint targets for hacking"</span>, <time datetime="2013-12">December 2013</time>, <span>&lt;<a href="https://www.washingtonpost.com/news/the-switch/wp/2013/12/10/nsa-uses-google-cookies-to-pinpoint-targets-for-hacking/">https://www.washingtonpost.com/news/the-switch/wp/2013/12/10/nsa-uses-google-cookies-to-pinpoint-targets-for-hacking/</a>&gt;</span>. </dd>
+<dt id="RFC7258">[RFC7258]</dt>
+<dd>
+<span class="refAuthor">Farrell, S.</span><span class="refAuthor"> and H. Tschofenig</span>, <span class="refTitle">"Pervasive Monitoring Is an Attack"</span>, <span class="seriesInfo">BCP 188</span>, <span class="seriesInfo">RFC 7258</span>, <span class="seriesInfo">DOI 10.17487/RFC7258</span>, <time datetime="2014-05">May 2014</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc7258">https://www.rfc-editor.org/info/rfc7258</a>&gt;</span>. </dd>
+</dl>
+</section>
+</section>
+<div id="acknowledgments">
+<section id="section-appendix.a">
+      <h2 id="name-acknowledgments">
+<a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
+      </h2>
+<p id="section-appendix.a-1">Conversations with a number of folks at 2019's HTTP Workshop helped me clarify my thinking around
+the incremental improvements we can make to cookies. In particular, Martin Thomson and Anne van
+Kesteren provided insightful feedback.<a href="#section-appendix.a-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="section-appendix.b">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Mike West</span></div>
+<div dir="auto" class="left"><span class="org">Google</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:mkwst@google.com" class="email">mkwst@google.com</a>
+</div>
+<div class="url">
+<span>URI:</span>
+<a href="https://www.mikewest.org/" class="url">https://www.mikewest.org/</a>
+</div>
+</address>
+</section>
+</div>
+<script>var toc = document.getElementById("toc");
+var tocToggle = toc.querySelector("h2");
+var tocNav = toc.querySelector("nav");
+
+// mobile menu toggle
+tocToggle.onclick = function(event) {
+    if (window.innerWidth < 1024) {
+ var tocNavDisplay = tocNav.currentStyle ? tocNav.currentStyle.display : getComputedStyle(tocNav, null).display;
+ if (tocNavDisplay == "none") {
+     tocNav.style.display = "block";
+ } else {
+     tocNav.style.display = "none";
+ }
+    }
+}
+
+// toc anchor scroll to anchor
+tocNav.addEventListener("click", function (event) {
+    event.preventDefault();
+    if (event.target.nodeName == 'A') {
+ if (window.innerWidth < 1024) {
+     tocNav.style.display = "none";
+ }
+ var href = event.target.getAttribute("href");
+ var anchorId = href.substr(1);
+ var anchor =  document.getElementById(anchorId);
+ anchor.scrollIntoView(true);
+ window.history.pushState("","",href);
+    }
+});
+
+// switch toc mode when window resized
+window.onresize = function () {
+    if (window.innerWidth < 1024) {
+ tocNav.style.display = "none";
+    } else {
+ tocNav.style.display = "block";
+    }
+}
+</script>
 </body>
 </html>
