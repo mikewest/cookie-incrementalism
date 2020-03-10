@@ -88,7 +88,7 @@ informative:
 
 --- abstract
 
-This document proposes three changes to cookies inspired by the properties of
+This document proposes a few changes to cookies inspired by the properties of
 the HTTP State Tokens mechanism proposed in {{I-D.west-http-state-tokens}}.
 First, cookies should be treated as `SameSite=Lax` by default. Second, cookies
 that explicitly assert `SameSite=None` in order to enable cross-site delivery
@@ -119,7 +119,7 @@ like agreement on at least two principles:
 2.  HTTP requests should not carry state over non-secure channels (see Section 8.3 of
     {{RFC6265bis}}, and {{RFC7258}}).
 
-With those principles in mind, this document proposes three changes that seem possible to deploy in
+With those principles in mind, this document proposes a few changes that seem possible to deploy in
 the near-term. User agents should:
 
 1.  Treat the lack of an explicit `SameSite` attribute as `SameSite=Lax`. That is, the `Set-Cookie`
@@ -136,9 +136,9 @@ the near-term. User agents should:
 
     This is spelled out in more detail in {{require-secure}}.
 
-3. Ensure the scheme, as well as the registrable domain, of the
-   "site for cookies" and request match when making a same-site decision.
-   That is, "http://site.example" and "https://site.example" should be
+3. Require both the scheme and registrable domain of a request's client's "site for cookies"
+   to match the target URL when deciding whether a given request is considered same-site.
+   That is, a request initiated from "http://site.example" to "https://site.example" should be
    considered cross-site.
 
    This is spelled out in more detail in {{schemeful-samesite}}.
@@ -235,16 +235,15 @@ This is conceptually similar to the requirements put into place for the `__Secur
 
 ## Schemeful Same-Site {#schemeful-samesite}
 
-By using the scheme, as well as the registrable domain, schemeful same-site can
-help to protect https origins against a network attacker that is impersonating
-an http origin with the same registrable domain, thereby further increasing
-SameSite's CSRF protections. To do so we need to modify a number of things:
+By considering the scheme as well as the registrable domain when determining whether a
+given request is "same-site", the `SameSite` attribute can protect secure origins from CSRF
+attacks initiated by a network attacker that can forge requests from a non-secure origin on
+the same registrable domain. To do so we need to modify a number of things:
 
 First change the definition of "site for cookies" from a registrable domain to
 an origin. In the places where a we return an empty string for a non-existent
 "site for cookies" we should instead return an origin set to a freshly
 generated globally unique identifier.
-
 Then replace the same-site calculation algorithm with the following:
 
 ~~~
@@ -255,9 +254,9 @@ Two origins, A and B, are considered same-site if the following algorithm return
 
     2.  Let hostA be A's host, and hostB be B's host.
 
-        1.  If hostA equals hostB and hostA's registrable domain is null, return true.
+    3.  If hostA equals hostB and hostA's registrable domain is null, return true.
 
-        2.  If hostA's registrable domain equals hostB's registrable domain and is non-null, return true.
+    4.  If hostA's registrable domain equals hostB's registrable domain and is non-null, return true.
 
 2.  If A and B are both the same globally unique identifier, return true.
 
@@ -274,7 +273,7 @@ Now that we have a new algorithm, we can update any comparision of two sites
 from "have the same registrable domain" (or "is an exact match for") to say
 "is same-site".
 
-Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets. We should do the same.
+Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets.
 
 # Security and Privacy Considerations
 
