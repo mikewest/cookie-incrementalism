@@ -177,7 +177,7 @@ We could accomplish this goal by first altering the processing algorithm, replac
 with the following two steps:
 
 ~~~
-1.  Let "enforcement" be "Lax".
+1.  Let "enforcement" be "Default".
 
 2.  If cookie-av's attribute-value is a case-insensitive
     match for "None", set "enforcement" to "None".
@@ -197,15 +197,115 @@ to:
 
 ~~~
 13. If the cookie-attribute-list contains an attribute
-    with an attribute-name of "SameSite", set the
+    with an attribute-name of "SameSite" and an
+    attribute-value of "Strict", "Lax", or "None", set the
     cookie's same-site-flag to attribute-value. Otherwise,
-    set the cookie's same-site-flag to "Lax".
+    set the cookie's same-site-flag to "Default".
+~~~
+
+And finally by altering the fifth bullet point of step 1 of the cookie-string construction algorithm
+in Section 5.5 of {{RFC6265bis}} from:
+
+~~~
+ *  If the cookie's same-site-flag is not "None", and the HTTP
+    request is cross-site (as defined in Section 5.2) then exclude
+    the cookie unless all of the following statements hold:
+
+    1.  The same-site-flag is "Lax"
+
+    2.  The HTTP request's method is "safe".
+
+    3.  The HTTP request's target browsing context is a top-level
+        browsing context.
+~~~
+
+to:
+
+~~~
+ *  If the cookie's same-site-flag is not "None", and the HTTP
+    request is cross-site (as defined in Section 5.2) then exclude
+    the cookie unless all of the following statements hold:
+
+    1.  The same-site-flag is "Lax" or "Default".
+
+    2.  The HTTP request's method is "safe".
+
+    3.  The HTTP request's target browsing context is a top-level
+        browsing context.
 ~~~
 
 This would have the effect of mapping the default behavior in the absence of an explicit `SameSite`
 attribute, as well as the presence of any unknown `SameSite` value, to the "Lax" behavior,
 protecting developers by making cross-site delivery an explicit choice, as opposed to an implicit
 default.
+
+
+### "Lax-Allowing-Unsafe" Enforcement {#lax-allowing-unsafe}
+
+The "Lax" enforcement mode described in Section 5.3.7.1 of {{RFC6265bis}} allows a cookie to be sent
+along with cross-site requests if and only if they are top-level navigations with a "safe" HTTP
+method. Implementation experience shows that this is difficult to apply across the board, and it may
+be reasonable to temporarily carve out cases in which some cookies that rely on today's default
+behavior can continue to be delivered as the default is shifted to "Lax" enforcement.
+
+One such carveout, described in this section, accommodates certain cases in which it may be
+desirable for a cookie to be excluded from non-top-level cross-site requests, but to be sent with
+all top-level navigations regardless of HTTP request method.
+
+For example, a login flow may involve a cross-site top-level POST request to an endpoint which
+expects a cookie with login information. For such a cookie, "Lax" enforcement is not appropriate, as
+it would cause the cookie to be excluded due to the unsafe HTTP request method. On the other hand,
+"None" enforcement would allow the cookie to be sent with all cross-site requests. For a cookie
+containing potentially sensitive login information, this may not be desirable.
+
+In order to retain some of the protections of "Lax" enforcement (as compared to "None") while still
+allowing cookies to be sent cross-site with unsafe top-level requests, user agents may choose to
+provide an intermediate "Lax-allowing-unsafe" enforcement mode. A cookie whose enforcement mode is
+"Lax-allowing-unsafe" will be sent along with a cross-site request if and only if it is a top-level
+request, regardless of request method.
+
+User agents may choose to apply this enforcement mode instead of "Lax" enforcement, but only in a
+limited or restricted fashion. Such restrictions may include applying "Lax-allowing-unsafe" only to
+cookies that did not explicitly specify `SameSite=Lax` (i.e., those whose same-site-flag was set to
+"Default" by default) with creation-time more recent than a duration of the user agent's choosing (2
+minutes seems reasonable).
+
+This is done by further modifying the previously mentioned fifth bullet point of step 1 of the
+cookie-string construction algorithm in Section 5.5 of {{RFC6265bis}} from:
+
+~~~
+ *  If the cookie's same-site-flag is not "None", and the HTTP
+    request is cross-site (as defined in Section 5.2) then exclude
+    the cookie unless all of the following statements hold:
+
+    1.  The same-site-flag is "Lax" or "Default".
+
+    2.  The HTTP request's method is "safe".
+
+    3.  The HTTP request's target browsing context is a top-level
+        browsing context.
+~~~
+
+to:
+
+~~~
+ *  If the cookie's same-site-flag is not "None", and the HTTP
+    request is cross-site (as defined in Section 5.2) then exclude
+    the cookie unless all of the following statements hold:
+
+    1.  The same-site-flag is "Lax" or "Default".
+
+    2.  The HTTP request's method is "safe", or the cookie meets
+        the user agent's requirements for being granted
+        "Lax-allowing-unsafe" enforcement.
+
+    3.  The HTTP request's target browsing context is a top-level
+        browsing context.
+~~~
+
+As a more permissive variant of "Lax" mode, "Lax-allowing-unsafe" mode necessarily provides fewer
+protections against CSRF.  Ultimately, the provision of such an enforcement mode should be seen as a
+temporary measure to ease adoption of "Lax" enforcement by default.
 
 
 ## Requiring "Secure" for "SameSite=None" {#require-secure}
