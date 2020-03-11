@@ -7,12 +7,14 @@
 <title>Incrementally Better Cookies</title>
 <meta content="Mike West" name="author">
 <meta content="
-       This document proposes two changes to cookies inspired by the properties of the HTTP State Tokens
-mechanism proposed in  . First, cookies should be treated as
- SameSite=Lax  by default. Second, cookies that explicitly assert  SameSite=None  in order to enable
-cross-site delivery should also be marked as  Secure . 
+       This document proposes a few changes to cookies inspired by the properties of
+the HTTP State Tokens mechanism proposed in  .
+First, cookies should be treated as  SameSite=Lax  by default. Second, cookies
+that explicitly assert  SameSite=None  in order to enable cross-site delivery
+should also be marked as  Secure . Third, same-site should take the scheme of
+the sites into account. 
     " name="description">
-<meta content="xml2rfc 2.40.0" name="generator">
+<meta content="xml2rfc 2.39.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-west-cookie-incrementalism-latest" name="ietf.draft">
 <link href="draft-west-cookie-incrementalism.xml" rel="alternate" type="application/rfc+xml">
@@ -196,6 +198,9 @@ a[href]:hover {
 a[href].selfRef:hover {
   background-color: var(--highlight-color);
 }
+a.xref {
+  white-space: nowrap;
+}
 
 /* Figures */
 tt, code, pre {
@@ -237,6 +242,10 @@ figcaption, caption {
     display: inline-block;
     vertical-align: text-bottom;
     padding-bottom: 8px;
+  }
+  table {
+    display: inline-block;
+    overflow-x: auto;
   }
 }
 
@@ -384,6 +393,9 @@ hr {
   padding-left: 1.2em;
   text-indent: -1.2em;
 }
+#toc a.xref {
+  white-space: normal;
+}
 /* references */
 .references dt {
   text-align: right;
@@ -461,13 +473,13 @@ hr.addr {
   max-width: calc(100% - 16px);
 }
 @media (min-width: 600px) {
-  #authors-addresses {
+  #authors-addresses > section {
     display: relative;
     padding: 32px 0 0;
     column-count: 2;
     column-gap: 20px;
   }
-  #name-authors-addresses {
+  #name-authors-address {
     position: absolute;
     top: 0px;
     column-span: all;
@@ -475,6 +487,7 @@ hr.addr {
   /* hack for break-inside: avoid-column */
   #authors-addresses address {
     display: inline-block;
+    break-inside: avoid-column;
   }
 }
 
@@ -813,7 +826,6 @@ table.left {
 <link href="rfc-local.css" rel="stylesheet" type="text/css">
 </head>
 <body>
-<script src="metadata.min.js"></script>
 <table class="ears">
 <thead><tr>
 <td class="left">Internet-Draft</td>
@@ -822,7 +834,7 @@ table.left {
 </tr></thead>
 <tfoot><tr>
 <td class="left">West</td>
-<td class="center">Expires 4 September 2020</td>
+<td class="center">Expires 12 September 2020</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -835,12 +847,12 @@ table.left {
 <dd class="internet-draft">draft-west-cookie-incrementalism-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2020-03-03" class="published">3 March 2020</time>
+<time datetime="2020-03-11" class="published">11 March 2020</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2020-09-04">4 September 2020</time></dd>
+<dd class="expires"><time datetime="2020-09-12">12 September 2020</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -853,10 +865,12 @@ table.left {
 <h1 id="title">Incrementally Better Cookies</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document proposes two changes to cookies inspired by the properties of the HTTP State Tokens
-mechanism proposed in <span>[<a href="#I-D.west-http-state-tokens" class="xref">I-D.west-http-state-tokens</a>]</span>. First, cookies should be treated as
-<code>SameSite=Lax</code> by default. Second, cookies that explicitly assert <code>SameSite=None</code> in order to enable
-cross-site delivery should also be marked as <code>Secure</code>.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document proposes a few changes to cookies inspired by the properties of
+the HTTP State Tokens mechanism proposed in <span>[<a href="#I-D.west-http-state-tokens" class="xref">I-D.west-http-state-tokens</a>]</span>.
+First, cookies should be treated as <code>SameSite=Lax</code> by default. Second, cookies
+that explicitly assert <code>SameSite=None</code> in order to enable cross-site delivery
+should also be marked as <code>Secure</code>. Third, same-site should take the scheme of
+the sites into account.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <div id="status-of-memo">
 <section id="section-boilerplate.1">
@@ -877,7 +891,7 @@ cross-site delivery should also be marked as <code>Secure</code>.<a href="#secti
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 4 September 2020.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 12 September 2020.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -933,6 +947,9 @@ cross-site delivery should also be marked as <code>Secure</code>.<a href="#secti
 </li>
 <li class="toc ulEmpty" id="section-toc.1-1.3.2.2">
                 <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-requiring-secure-for-samesi" class="xref">Requiring "Secure" for "SameSite=None"</a><a href="#section-toc.1-1.3.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-schemeful-same-site" class="xref">Schemeful Same-Site</a><a href="#section-toc.1-1.3.2.3.1" class="pilcrow">¶</a></p>
 </li>
 </ul>
 </li>
@@ -1000,7 +1017,7 @@ aspect of HTTP State Tokens, we can apply those aspirations to cookies, driving 
 improvements to state management in the status quo.<a href="#section-1-2" class="pilcrow">¶</a></p>
 <p id="section-1-3">Based on conversations at <span>[<a href="#HTTP-Workshop-2019" class="xref">HTTP-Workshop-2019</a>]</span> and elsewhere, I'd suggest that we have something
 like agreement on at least two principles:<a href="#section-1-3" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-1-4">
+<ol start="1" type="1" class="normal" id="section-1-4">
         <li id="section-1-4.1">HTTP requests should not carry state along with cross-site requests by default (see Section 8.2
 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>).<a href="#section-1-4.1" class="pilcrow">¶</a>
 </li>
@@ -1008,9 +1025,9 @@ of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>).<a href="#s
 <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>, and <span>[<a href="#RFC7258" class="xref">RFC7258</a>]</span>).<a href="#section-1-4.2" class="pilcrow">¶</a>
 </li>
 </ol>
-<p id="section-1-5">With those principles in mind, this document proposes two changes that seem possible to deploy in
+<p id="section-1-5">With those principles in mind, this document proposes a few changes that seem possible to deploy in
 the near-term. User agents should:<a href="#section-1-5" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-1-6">
+<ol start="1" type="1" class="normal" id="section-1-6">
         <li id="section-1-6.1">
           <p id="section-1-6.1.1">Treat the lack of an explicit <code>SameSite</code> attribute as <code>SameSite=Lax</code>. That is, the <code>Set-Cookie</code>
 value <code>key=value</code> will produce a cookie equivalent to <code>key=value; SameSite=Lax</code>. Cookies that
@@ -1026,6 +1043,14 @@ conceptually to the behavior for the <code>__Secure-</code> prefix). That is, th
 rejected.<a href="#section-1-6.2.1" class="pilcrow">¶</a></p>
 <p id="section-1-6.2.2">
 This is spelled out in more detail in <a href="#require-secure" class="xref">Section 3.2</a>.<a href="#section-1-6.2.2" class="pilcrow">¶</a></p>
+</li>
+<li id="section-1-6.3">
+          <p id="section-1-6.3.1">Require both the scheme and registrable domain of a request's client's "site for cookies"
+to match the target URL when deciding whether a given request is considered same-site.
+That is, a request initiated from "http://site.example" to "https://site.example" should be
+considered cross-site.<a href="#section-1-6.3.1" class="pilcrow">¶</a></p>
+<p id="section-1-6.3.2">
+This is spelled out in more detail in <a href="#schemeful-samesite" class="xref">Section 3.3</a>.<a href="#section-1-6.3.2" class="pilcrow">¶</a></p>
 </li>
 </ol>
 </section>
@@ -1240,6 +1265,50 @@ attribute (Section 4.1.2.5 of <span>[<a href="#RFC6265bis" class="xref">RFC6265b
 4.1.3.1 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>).<a href="#section-3.2-5" class="pilcrow">¶</a></p>
 </section>
 </div>
+<div id="schemeful-samesite">
+<section id="section-3.3">
+        <h3 id="name-schemeful-same-site">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-schemeful-same-site" class="section-name selfRef">Schemeful Same-Site</a>
+        </h3>
+<p id="section-3.3-1">By considering the scheme as well as the registrable domain when determining whether a
+given request is "same-site", the <code>SameSite</code> attribute can protect secure origins from CSRF
+attacks initiated by a network attacker that can forge requests from a non-secure origin on
+the same registrable domain. To do so we need to modify a number of things:<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">First change the definition of "site for cookies" from a registrable domain to
+an origin. In the places where a we return an empty string for a non-existent
+"site for cookies" we should instead return an origin set to a freshly
+generated globally unique identifier.
+Then replace the same-site calculation algorithm with the following:<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.3-3">
+<pre>
+Two origins, A and B, are considered same-site if the following algorithm returns true:
+1.  If A and B are both scheme/host/port triples then
+
+    1.  If A's scheme does not equal B's scheme, return false.
+
+    2.  Let hostA be A's host, and hostB be B's host.
+
+    3.  If hostA equals hostB and hostA's registrable domain is null, return true.
+
+    4.  If hostA's registrable domain equals hostB's registrable domain and is non-null, return true.
+
+2.  If A and B are both the same globally unique identifier, return true.
+
+3.  Return false.
+
+Note: The port component of the origins is not considered.
+
+A request is "same-site" if its target's URI's origin
+is same-site with the request's client's "site for cookies", or if the
+request has no client. The request is otherwise "cross-site".
+</pre><a href="#section-3.3-3" class="pilcrow">¶</a>
+</div>
+<p id="section-3.3-4">Now that we have a new algorithm, we can update any comparision of two sites
+from "have the same registrable domain" (or "is an exact match for") to say
+"is same-site".<a href="#section-3.3-4" class="pilcrow">¶</a></p>
+<p id="section-3.3-5">Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets.<a href="#section-3.3-5" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 <div id="security-and-privacy-considerations">
@@ -1314,8 +1383,9 @@ expiration and delivery.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-sequencing" class="section-name selfRef">Sequencing</a>
         </h3>
 <p id="section-5.1-1">The steps described in this document don't need to be taken at the same time. It's quite possible
-that it will be less disruptive to deploy <code>SameSite=Lax</code> as a default first, and then to require the
-<code>Secure</code> attribute for any explicitly <code>SameSite=None</code> cookie as a subsequent step.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+that it will be less disruptive to deploy <code>SameSite=Lax</code> as a default first, then to require the
+<code>Secure</code> attribute for any explicitly <code>SameSite=None</code> cookie as a subsequent step, and then
+deploying schemeful same-site in a final step.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <p id="section-5.1-2">User agents are encouraged to adopt these recommendations in whatever order they believe will lead
 to the widest, most expedient deployment.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
 </section>
