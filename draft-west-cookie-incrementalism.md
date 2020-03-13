@@ -39,7 +39,7 @@ informative:
   I-D.west-cookie-samesite-firstparty:
     target: https://tools.ietf.org/html/draft-west-cookie-samesite-firstparty-00
     title: First-Party Sets and SameSite Cookies
-    date: May 7, 2019  
+    date: May 7, 2019
     author:
     -
       ins: M. West
@@ -64,7 +64,7 @@ informative:
     -
       ins: A. Peterson
       name: Andrea Peterson
-    - 
+    -
       ins: B. Gellman
       name: Barton Gellman
   first-party-set:
@@ -83,15 +83,17 @@ informative:
     -
       ins: M. Nottingham
       name: Mark Nottingham
-      organization: Fastly    
+      organization: Fastly
 
 
 --- abstract
 
-This document proposes two changes to cookies inspired by the properties of the HTTP State Tokens
-mechanism proposed in {{I-D.west-http-state-tokens}}. First, cookies should be treated as
-`SameSite=Lax` by default. Second, cookies that explicitly assert `SameSite=None` in order to enable
-cross-site delivery should also be marked as `Secure`.
+This document proposes a few changes to cookies inspired by the properties of
+the HTTP State Tokens mechanism proposed in {{I-D.west-http-state-tokens}}.
+First, cookies should be treated as `SameSite=Lax` by default. Second, cookies
+that explicitly assert `SameSite=None` in order to enable cross-site delivery
+should also be marked as `Secure`. Third, same-site should take the scheme of
+the sites into account.
 
 
 --- middle
@@ -117,7 +119,7 @@ like agreement on at least two principles:
 2.  HTTP requests should not carry state over non-secure channels (see Section 8.3 of
     {{RFC6265bis}}, and {{RFC7258}}).
 
-With those principles in mind, this document proposes two changes that seem possible to deploy in
+With those principles in mind, this document proposes a few changes that seem possible to deploy in
 the near-term. User agents should:
 
 1.  Treat the lack of an explicit `SameSite` attribute as `SameSite=Lax`. That is, the `Set-Cookie`
@@ -133,6 +135,13 @@ the near-term. User agents should:
     rejected.
 
     This is spelled out in more detail in {{require-secure}}.
+
+3. Require both the scheme and registrable domain of a request's client's "site for cookies"
+   to match the target URL when deciding whether a given request is considered same-site.
+   That is, a request initiated from "http://site.example" to "https://site.example" should be
+   considered cross-site.
+
+   This is spelled out in more detail in {{schemeful-samesite}}.
 
 
 # Conventions and Definitions
@@ -324,6 +333,47 @@ attribute (Section 4.1.2.5 of {{RFC6265bis}}) by altering the storage model defi
 This is conceptually similar to the requirements put into place for the `__Secure-` prefix (Section
 4.1.3.1 of {{RFC6265bis}}).
 
+## Schemeful Same-Site {#schemeful-samesite}
+
+By considering the scheme as well as the registrable domain when determining whether a
+given request is "same-site", the `SameSite` attribute can protect secure origins from CSRF
+attacks initiated by a network attacker that can forge requests from a non-secure origin on
+the same registrable domain. To do so we need to modify a number of things:
+
+First change the definition of "site for cookies" from a registrable domain to
+an origin. In the places where a we return an empty string for a non-existent
+"site for cookies" we should instead return an origin set to a freshly
+generated globally unique identifier.
+Then replace the same-site calculation algorithm with the following:
+
+~~~
+Two origins, A and B, are considered same-site if the following algorithm returns true:
+1.  If A and B are both scheme/host/port triples then
+
+    1.  If A's scheme does not equal B's scheme, return false.
+
+    2.  Let hostA be A's host, and hostB be B's host.
+
+    3.  If hostA equals hostB and hostA's registrable domain is null, return true.
+
+    4.  If hostA's registrable domain equals hostB's registrable domain and is non-null, return true.
+
+2.  If A and B are both the same globally unique identifier, return true.
+
+3.  Return false.
+
+Note: The port component of the origins is not considered.
+
+A request is "same-site" if its target's URI's origin
+is same-site with the request's client's "site for cookies", or if the
+request has no client. The request is otherwise "cross-site".
+~~~
+
+Now that we have a new algorithm, we can update any comparision of two sites
+from "have the same registrable domain" (or "is an exact match for") to say
+"is same-site".
+
+Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets.
 
 # Security and Privacy Considerations
 
@@ -381,8 +431,9 @@ expiration and delivery.
 ## Sequencing
 
 The steps described in this document don't need to be taken at the same time. It's quite possible
-that it will be less disruptive to deploy `SameSite=Lax` as a default first, and then to require the
-`Secure` attribute for any explicitly `SameSite=None` cookie as a subsequent step.
+that it will be less disruptive to deploy `SameSite=Lax` as a default first, then to require the
+`Secure` attribute for any explicitly `SameSite=None` cookie as a subsequent step, and then
+deploying schemeful same-site in a final step.
 
 User agents are encouraged to adopt these recommendations in whatever order they believe will lead
 to the widest, most expedient deployment.
