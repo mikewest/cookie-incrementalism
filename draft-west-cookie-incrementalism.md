@@ -30,21 +30,17 @@ author:
     uri: https://www.mikewest.org/
 
 normative:
+  HTML:
+    title: HTML
+    target: https://html.spec.whatwg.org/
   RFC2119:
   RFC6265bis: I-D.ietf-httpbis-rfc6265bis
 
 informative:
   RFC7258:
+  I-D.thomson-http-omnomnom:
   I-D.west-http-state-tokens:
   I-D.west-cookie-samesite-firstparty:
-    target: https://tools.ietf.org/html/draft-west-cookie-samesite-firstparty-00
-    title: First-Party Sets and SameSite Cookies
-    date: May 7, 2019
-    author:
-    -
-      ins: M. West
-      name: Mike West
-      organization: Google
   mixed-content:
     target: https://w3c.github.io/webappsec-mixed-content/
     title: Mixed Content
@@ -75,6 +71,15 @@ informative:
       ins: M. West
       name: Mike West
       organization: Google
+  cookies-over-http-bad:
+    title: Cookies over HTTP Bad
+    target: https://github.com/mikewest/cookies-over-http-bad
+    date: April 6, 2018
+    author:
+    -
+      ins: M. West
+      name: Mike West
+      organization: Google
   HTTP-Workshop-2019:
     target: https://github.com/HTTPWorkshop/workshop2019/wiki/Report
     title: "HTTP Workshop 2019: Report"
@@ -93,7 +98,9 @@ the HTTP State Tokens mechanism proposed in {{I-D.west-http-state-tokens}}.
 First, cookies should be treated as `SameSite=Lax` by default. Second, cookies
 that explicitly assert `SameSite=None` in order to enable cross-site delivery
 should also be marked as `Secure`. Third, same-site should take the scheme of
-the sites into account.
+the sites into account. Fourth, cookies should respect schemes. Fifth, cookies
+associated with non-secure schemes should be removed at the end of a user's
+session. Sixth, the definition of a session should be tightened.
 
 
 --- middle
@@ -111,13 +118,16 @@ aspect of HTTP State Tokens, we can apply those aspirations to cookies, driving 
 improvements to state management in the status quo.
 
 Based on conversations at {{HTTP-Workshop-2019}} and elsewhere, I'd suggest that we have something
-like agreement on at least two principles:
+like agreement on at least three principles:
 
 1.  HTTP requests should not carry state along with cross-site requests by default (see Section 8.2
     of {{RFC6265bis}}).
 
 2.  HTTP requests should not carry state over non-secure channels (see Section 8.3 of
     {{RFC6265bis}}, and {{RFC7258}}).
+
+3.  Non-secure channels should not be able to infuence the state of securely-transported content
+    (see Sections 8.3, 8.5, and 8.6 of {{RFC6265bis}}).
 
 With those principles in mind, this document proposes a few changes that seem possible to deploy in
 the near-term. User agents should:
@@ -142,6 +152,22 @@ the near-term. User agents should:
    considered cross-site.
 
    This is spelled out in more detail in {{schemeful-samesite}}.
+
+4. Separate cookies by scheme. That is, a given cookie set from `http://example.com/` should be
+   considered distinct from the same cookie set from `https://example.com/`, preventing the former
+   from influencing the state of the latter.
+
+   This is spelled out in more detail in {{scheming-cookies}}.
+
+5. Evict non-secure cookies when a user's session on a non-secure site ends, thereby reducing the
+   timespan over which a user broadcasts a stable identifier to the network.
+
+   This is spelled out in more detail in {{evict-nonsecure}}.
+
+6. Tighten the definition of a user's "session" with heuristics that better represent users'
+   expectations.
+
+   This is spelled out in more detail in {{session-lifetime}}.
 
 
 # Conventions and Definitions
@@ -375,6 +401,184 @@ from "have the same registrable domain" (or "is an exact match for") to say
 
 Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets.
 
+## Scheming Cookies {#scheming-cookies}
+
+Cookies are one of the very few components of the web platform that ignore scheme by default. The
+`Secure` attribute can lock a cookie to secure schemes, and the `__Secure-` prefix can harden that
+boundary, but these mechanisms are little-used, and cookies lacking these protections flow across
+scheme boundaries. They are delivered to both the HTTP and HTTPS variants of a given domain, even
+though their security properties differ radically. As Section 8.6 of
+{{RFC6265bis}} points out, this gives network attackers the ability to influence otherwise secured
+traffic by modifying user state that flows to secure origins, and, of course, insight into user
+behavior as securely-set cookies that lack the `Secure` attribute likewise flow from secure origins
+to non-secure variants.
+
+We should remedy this defect by storing a `scheme` component along with the cookie, and using that
+component in cookies' matching algorithms to ensure that secure and non-secure origins' state is
+clearly distinguishable and separate. This is accomplished as follows:
+
+First, alter the Storage Model defined in Section 5.4 of {{RFC6265bis}} by adding `scheme` to the
+list of fields the user agent stores about each cookie, and setting it when creating a cookie by
+altering step 2 of the same algorithm from:
+
+~~~
+2.   Create a new cookie with name cookie-name, value cookie-value.
+     Set the creation-time and the last-access-time to the current
+     date and time.
+~~~
+
+to:
+
+~~~
+2.   Create a new cookie with name cookie-name, value cookie-value.
+     Set the creation-time and the last-access-time to the current
+     date and time. Set the scheme to request-uri's origin's scheme
+     component.
+~~~
+
+Likewise alter step 17 of the same algorithm from:
+
+~~~
+17.  If the cookie store contains a cookie with the same name,
+     domain, host-only-flag, and path as the newly-created cookie:
+~~~
+
+to:
+
+~~~
+17.  If the cookie store contains a cookie with the same name, scheme,
+     domain, host-only-flag, and path as the newly-created cookie:
+~~~
+
+And step 17.1 from:
+
+~~~
+17.1.  Let old-cookie be the existing cookie with the same name,
+       domain, host-only-flag, and path as the newly-created
+       cookie.  (Notice that this algorithm maintains the invariant
+       that there is at most one such cookie.)
+~~~
+
+to:
+
+~~~
+17.1.  Let old-cookie be the existing cookie with the same name, scheme,
+       domain, host-only-flag, and path as the newly-created
+       cookie.  (Notice that this algorithm maintains the invariant
+       that there is at most one such cookie.)
+~~~
+
+Second, alter The Cookie Header algorithm defined in Section 5.5 of {{RFC6265bis}} to take the
+`scheme` into account when deciding which cookies to deliver by adding another condition to the
+list in Step 1 of the algorithm:
+
+~~~
+*   The cookies' `scheme` matches the scheme component of request-uri's origin.
+~~~
+
+This seems like the minimal set of changes necessary. We could do other cleanup, including removing
+the `Secure` attribute, as this mechanism obviates it entirely, altering the eviction algorithm to
+prefer discarding non-secure schemes, etc.
+
+
+## Evict Non-Secure Cookies {#evict-nonsecure}
+
+In the status quo, cookies delivered to non-secure origins are, generally, quite old. Each cookies'
+age is somewhat representative of its risk: long-lived cookies expose persistent identifiers to the
+network when delivered non-securely which create tracking opportunities over time. Here, we aim to
+mitigate this risk by substantially reducing the lifetime of non-secure cookies, thereby limiting
+the window of opportunity for network attackers.
+
+This is similar conceptually to previous proposals, notably {{I-D.thomson-http-omnomnom}} and
+{{cookies-over-http-bad}}, but seems like it might be more deployable, especially in conjunction
+with the scheme changes above.
+
+The change is straightforward, requiring the following text to be added to the bottom of Section
+5.4 of {{RFC6265bis}}:
+
+~~~
+When "the current session is over", the user agent MUST remove from the cookie store all cookies
+whose `scheme` component is non-secure.
+~~
+
+As discussed below in {#session-lifetime}, if we add a site-specific session concept, we can make
+the following addition:
+
+~~
+When "the current session is over" for an origin, the user agent MUST remove from the cookie store
+all cookies whose `scheme` component is non-secure, and whose `domain` component's registrable
+domain matches the origin's registrable domain.
+~~
+
+This still requires the user agent to define a notion of non-secureness, but it would certainly
+include "http".
+
+
+## Session Lifetime {#session-lifetime}
+
+Section 5.4 of {{RFC6265bis}} defines "the current session is over" by choosing not to define it,
+instead leaving it up to the user agent. Unfortunately, we have several "session" concepts in user
+agents today, and it's not clear that any of them are appropriate for cookies. HTML's
+`sessionStorage` lifetime is tied to a particular top-level browsing context, thereby giving two
+tabs/windows different views into a page's state. Various user agents' "private mode" create
+sessions that are scoped in various ways: Chrome's Incognito mode ties a session's lifetime to the
+closure of the last Incognito window, Safari's private mode's lifetime is tab-specific, etc. Session
+cookies' lifetime likewise differs between user agents, in some cases based on user-visible settings
+like Chrome's "Continue where you left off" (which can lead to quite persistent sessions indeed).
+
+At some risk of further complicating the notion of a "session", it might be reasonable to learn from
+existing user agents' work around meeting users' conceptions of when they're using a given site, and
+to define a recommended heuristic that user agents could adopt. In particular, Chromium's site
+engagement score and Safari's ITP both track a user's last moment of interaction with a site (which
+might feasibly include things like navigation, clicks, scrolls, etc). This seems like a useful bit
+of data to take into account, along with whether or not a user has top-level browsing contexts that
+include a given site.
+
+To that end, we could add a few concepts to {{RFC6265bis}} to give browser vendors more clarity
+around a reasonable approach to defining when "the current session is over" for a specific site,
+rather that for the browsing session as a whole. Something along the following lines makes sense to
+me:
+
+1.  User agents should store a timestamp of the last interaction with a given site in a top-level
+    browsing context {{HTML}}. User agents have a great deal of flexibility in what they consider
+    an interaction, but typing and clicking should probably count.
+
+2.  Change the "close a browsing context" algorithm {{HTML}} to call the following algorithm between
+    its existing step 1 and step 2:
+
+    1.  Let `closedOrigin` be the origin of `browsingContext`'s active document.
+
+    2.  For each top-level browsing context `c`:
+
+        1.  If `c` is `browsingContext`, continue.
+
+        2.  If `c`'s active document's origin is same site with `browsingContext`'s active
+            document's origin, return.
+
+    3.  ASSERT: No top-level browsing context contains a document that's same-site with the
+        document being closed.
+
+    4.  Return, and continue running this algorithm in parallel.
+
+    5.  Wait however long a user would reasonably expect their state to be retained (an hour
+        sounds reasonable).
+
+    5.  For each top-level browsing context `c`:
+
+        1.  If `c`'s active document's origin is same site with `closedOrigin`, return.
+
+    6.  ASSERT: No top-level browsing context contains a document that's same-site with the
+        document that was closed.
+
+    7.  Trigger "the current session is over" for `closedOrigin`.
+
+3.  Define a new handler for "the current session is over" that takes an origin into account, and
+    clears session cookies for that origin's site.
+
+Note that these definitions refer to "site", not "origin", as cookies span an entire registrable
+domain. Ideally, we'll address that too, but not today.
+
+
 # Security and Privacy Considerations
 
 ## CSRF
@@ -467,3 +671,10 @@ This document has no IANA actions.
 Conversations with a number of folks at 2019's HTTP Workshop helped me clarify my thinking around
 the incremental improvements we can make to cookies. In particular, Martin Thomson and Anne van
 Kesteren provided insightful feedback.
+
+Lily Chen has been instrumental in initial deployments of the `SameSite` changes described in 
+{{lax-default}} and {{require-secure}}, proving that incremental changes to cookies can be
+successfully shipped.
+
+Steven Bingler contributed the "Schemeful SameSite" proposal described in {{schemeful-samesite}}.
+
