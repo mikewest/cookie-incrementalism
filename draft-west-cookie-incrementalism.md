@@ -407,9 +407,9 @@ Note: The request's URL when establishing a WebSockets connection has scheme "ht
 ## Origin-Bound Cookies {#origin-bound-cookies}
 
 Cookies are one of the few components of the web platform that are not
-scoped to the origin by default. The “Secure” attribute can scope a
-cookie to secure schemes, and cookie prefixes (“__Secure-” and
-“__Host-”) can tighten that boundary, but these mechanisms are
+scoped to the origin by default. The `Secure` attribute can scope a
+cookie to secure schemes, and cookie prefixes ("__Secure-" and
+"__Host-") can tighten that boundary, but these mechanisms are
 little-used. Cookies that lack these protections easily move between
 schemes (and even with these mechanisms will still move between ports).
 The same cookies may be delivered to both the HTTP and HTTPS variants of
@@ -418,23 +418,23 @@ radically. As Section 8.6 of {{RFC6265bis}} points out, this gives
 network attackers the ability to influence otherwise secured traffic by
 modifying user state that flows to secure origins, and gives them
 insight into user behavior, as securely-set cookies that lack the
-"Secure" attribute likewise flow from secure origins to non-secure
+`Secure` attribute likewise flow from secure origins to non-secure
 origins. Additionally, cookies are delivered to all ports of a given
-domain, which can’t necessarily be trusted as Section 8.5 of
+domain, which can't necessarily be trusted as Section 8.5 of
 {{RFC6265bis}} points out. Similarly to above, attackers operating on a
 different port could influence otherwise secured traffic.
 
-We should remedy this defect by storing both a “scheme” and “port”
-component along with the cookie, and use those components in cookies’
+We should remedy this defect by storing both a "scheme" and "port"
+component along with the cookie, and use those components in cookies'
 matching algorithms to ensure that a cookie is only sent to the origin
-that originally set it, thus keeping origins’ state separate by default.
+that originally set it, thus keeping origins' state separate by default.
 
-It’s possible that a site operator purposefully wants their cookies to
+It's possible that a site operator purposefully wants their cookies to
 be usable across ports. For these situations it seems reasonable to
 allow a server to specify that a given cookie should be accessible by
 different origins. Since the Domain attribute already does this, by
 matching multiple hosts, we can extend it to also match all ports.
-Thereby allowing a cookie with the Domain attribute, a “domain cookie”,
+Thereby allowing a cookie with the Domain attribute, a "domain cookie",
 to be accessible from any port value. This behavior extends to
 overwriting cookies as well. Examples:
 
@@ -447,17 +447,17 @@ overwriting cookies as well. Examples:
     which sets `Set-Cookie: a=origincookie`. The second cookie would
     match the first and overwrite it.
 
-Given that these “domain cookies'' are less trusted (due to their
+Given that these "domain cookies" are less trusted (due to their
 accessibility by different hosts and ports) we should try and prevent
-them from shadowing “origin cookies”. Example:
+them from shadowing "origin cookies". Example:
 
 1. https://example.com:456 sets a cookie `Set-Cookie: a=origincookie`.
    The user then visits https://example.com:123 which tries to set a
    cookie `Set-Cookie: a=domaincookie; Domain=example.com`. The second
-   cookie would fail to be set because the cookie it’s attempting to
+   cookie would fail to be set because the cookie it's attempting to
    overwrite is an origin cookie.
 
-Finally, we don’t ever want to allow a cookie to pass between schemes,
+Finally, we don't ever want to allow a cookie to pass between schemes,
 given the huge security differences between them. So there should be no
 way for a server to specify that a given cookie should be sent to a
 different scheme.
@@ -474,13 +474,13 @@ below)
 
 An integer port-matches a given cookie if any of the following
 conditions are true:
-  1. The integer exactly matches the cookie’s port value.
+  1. The integer exactly matches the cookie's port value.
 
-  2. The cookie’s host-only-flag is false.
+  2. The cookie's host-only-flag is false.
 ~~~
 
 We also want to add a sub-algorithm to protect origin cookies from being
-overwritten/shadowed by domain cookies. This’ll be run during the
+overwritten/shadowed by domain cookies. This'll be run during the
 creation of new cookies in a later step.
 
 ~~~
@@ -492,27 +492,28 @@ attribute and is as follows:
 
 If the new-cookie's host-only-flag is true, then return true.
 
-If the new-cookie’s host-only-flag is false, then return false if the
+If the new-cookie's host-only-flag is false, then return false if the
 cookie store contains at least one cookie ("equiv-cookie") that meets
 all of the following criteria: 
-  1. Equiv-cookie’s name and scheme match new-cookie’s name and scheme.
+  1. Equiv-cookie's name and scheme are equal to new-cookie's name and
+     scheme.
 
-  2. Equiv-cookie’s host-only-flag is true.
+  2. Equiv-cookie's host-only-flag is true.
 
-  3. Equiv-cookie’s domain domain-matches the domain of new-cookie. 
+  3. Equiv-cookie's domain domain-matches the domain of new-cookie. 
   (Note: this is an asymmetrical comparison) 
 
 Otherwise return true
 
 Notice the asymmetric comparison during the domain-matching. It can be
-helpful to think of domain-matching as: “A domain-matches B when A is
-equivalent to or a sub-domain of B”. Since a cookie with the Domain
+helpful to think of domain-matching as: "A domain-matches B when A is
+equivalent to or a sub-domain of B". Since a cookie with the Domain
 attribute is sent to all hosts that are equivalent to or a sub-domain
-of its Domain’s value, this asymmetric comparison prevents a cookie
+of its Domain's value, this asymmetric comparison prevents a cookie
 with the Domain attribute from being set when it would be sent to any
 host that also contains an origin-only cookie.
 
-Note: This comparison intentionally ignores the “path” component. The
+Note: This comparison intentionally ignores the "path" component. The
 intent is to protect a more tightly scoped origin bound cookie across
 the entire origin.
 
@@ -520,13 +521,13 @@ Example: https://landing.site.example sets a cookie `Set-Cookie:
 a=origincookie`. The user then visits https://account.site.example
 which tries to set a cookie `Set-Cookie: a=domaincookie;
 Domain=site.example`. The second cookie would fail to be set because
-the cookie would shadow“a=origincookie”.
+the cookie would shadow "a=origincookie".
 ~~~
 
 Next, alter the storage model in Section 5.4 of {{RFC6265bis}} by
-adding“scheme” and “port” to the list of fields the user agent stores
-about each cookie, and setting them. Also, lets refer to the newly
-created cookie by “new-cookie” by altering step 3 of the algorithm
+adding "scheme" and "port" to the list of fields the user agent stores
+about each cookie, and setting them. Also, let's refer to the newly
+created cookie by "new-cookie" by altering step 3 of the algorithm
 from:
 
 ~~~
@@ -538,17 +539,17 @@ from:
 to: 
 
 ~~~
-3.  Create a new cookie (“new-cookie”) with name cookie-name, value
+3.  Create a new cookie ("new-cookie") with name cookie-name, value
     cookie-value. Set the creation-time and the last-access-time to the
-    current date and time, set the scheme to the request-uri’s origin’s
-    scheme component, and set the port to the request-uri’s origin’s
+    current date and time, set the scheme to the request-uri's origin's
+    scheme component, and set the port to the request-uri's origin's
     port component.
 ~~~
 
-References to the cookie should also be updated to use “new-cookie” in
+References to the cookie should also be updated to use "new-cookie" in
 steps 3-20 as required.
 
-To prevent “domain cookies” from shadowing “origin cookies” we alter
+To prevent "domain cookies" from shadowing "origin cookies" we alter
 step 13 from
 
 ~~~
@@ -586,10 +587,10 @@ to:
 ~~~
 
 Note: Because all cookies are now scoped by scheme it is unnecessary to
-protect a secure scheme’s cookies from an insecure scheme’s cookies and
+protect a secure scheme's cookies from an insecure scheme's cookies and
 thus we can drop the related checks in the original step 13.
 
-To incorporate the new fields and “domain cookie” port matching, alter
+To incorporate the new fields and "domain cookie" port matching, alter
 step 19 of the same algorithm from
 
 ~~~
@@ -614,13 +615,13 @@ step 19 of the same algorithm from
 to:
 
 ~~~
-19. If the cookie store contains a cookie (“old-cookie”) with the same
+19. If the cookie store contains a cookie ("old-cookie") with the same
     name, scheme, domain, path, and for which either of the following
     conditions is true:
 
-    * The old-cookie’s port port-matches the new-cookie.
+    * The old-cookie's port port-matches the new-cookie.
 
-    * The new-cookie’s port port-matches the old-cookie.
+    * The new-cookie's port port-matches the old-cookie.
 
     (Notice that this algorithm maintains the invariant that there are
     no two cookies in the cookie store with the same name, scheme,
@@ -687,17 +688,17 @@ to:
 
     * The request-uri's path path-matches the cookie's path.
 
-    * The request-uri’s origin’s port component port-matches the
+    * The request-uri's origin's port component port-matches the
       cookie.
 
-    * The request-uri’s origin’s scheme component is identical to the
-      cookie’s scheme
+    * The request-uri's origin's scheme component is identical to the
+      cookie's scheme
 ~~~
 
 At which point cookies will be bound to their origin (but have an
 ability to cross port thresholds via the Domain attribute if needed).
-There are remaining clean up task such as updating the “Weak
-Confidentiality” and “Weak Integrity” section, modifying the eviction
+There are remaining clean up task such as updating the "Weak
+Confidentiality" and "Weak Integrity" section, modifying the eviction
 algorithm to prefer domain cookies/non-secure schemes, updating
 references to Secure (and its uses), etc that will need to tended to
 before this can be adopted into a full specs doc. 
