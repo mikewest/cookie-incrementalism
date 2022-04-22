@@ -407,55 +407,114 @@ Note: The request's URL when establishing a WebSockets connection has scheme "ht
 ## Origin-Bound Cookies {#origin-bound-cookies}
 
 Cookies are one of the few components of the web platform that are not
-scoped to the origin by default. The `Secure` attribute can scope a
-cookie to secure schemes, and cookie prefixes ("__Secure-" and
-"__Host-") can tighten that boundary, but these mechanisms are
-little-used. Cookies that lack these protections easily move between
-schemes (and even with these mechanisms will still move between ports).
-The same cookies may be delivered to both the HTTP and HTTPS variants of
-a given domain, even though the security properties of them differ
-radically. As Section 8.6 of {{RFC6265bis}} points out, this gives
-network attackers the ability to influence otherwise secured traffic by
-modifying user state that flows to secure origins, and gives them
-insight into user behavior, as securely-set cookies that lack the
-`Secure` attribute likewise flow from secure origins to non-secure
-origins. Additionally, cookies are delivered to all ports of a given
-domain, which can't necessarily be trusted as Section 8.5 of
-{{RFC6265bis}} points out. Similarly to above, attackers operating on a
-different port could influence otherwise secured traffic.
+scoped to the origin by default. This difference in scoping means that
+cookies have weaken confidentiality and integrity compared with other
+storage APIs on the web platform.
+
+Examples:
+
+1. `https://somesite.com` sets a simple cookie, `secret=123456`,
+    which contains private information about a user. Information that
+    an attacker wishes to learn. To do so the attacker
+    man-in-the-middles the user, and then tricks them into visiting
+    `http://somesite.com` (note the insecure scheme). When the user
+    visits that page their browser will send the `secret` cookie and
+    the attacker can see it.
+
+2. Similarly, if the attacker has somehow compromised a service running
+    on a different port on the same server, let's say port 345, as
+    `https://somesite.com` then they could trick the user into visiting
+    `https://somesite.com:345`, the user's browser will send the `secret`
+    cookie, and once again the attacker can see it.
+
+Even more, through the same techniques, an attacker can also modify
+a user's cookies, sending a `Set-Cookie` field instead of simply
+eavesdropping.
+
+All of these examples are possible because cookies by default do not
+care about the scheme or port of their connection. As long as the host
+matches the cookie will be accessible.
+
+Some of these shortcomings can be alleviated: the `Secure` attribute
+scopes a cookie to only be accesible on secure schemes and the cookie
+prefixes, `__Secure-` and `__Host-`, can tighten that boundary more.
+While these solve the problem shown in the first example, they are all
+opt-in and are not always used. They also do nothing to help solve
+the port problem shown in the example two. In fact, there are currently
+no mechanisms that can strengthen cookies' port boundaries.
+
+These weaknesses in cookies gives network attackers the ability to spy
+upon users and influence otherwise secured traffic by modifying users'
+state as Sections 8.5 and 8.6 of {{RFC6265bis}} point out.
 
 We should remedy this defect by storing both a "scheme" and "port"
 component along with the cookie, and use those components in cookies'
 matching algorithms to ensure that a cookie is only sent to the origin
-that originally set it, thus keeping origins' state separate by default.
+that originally set it, thus keeping origins' state separate by
+default.
 
-It's possible that a site operator purposefully wants their cookies to
-be usable across ports. For these situations it seems reasonable to
-allow a server to specify that a given cookie should be accessible by
-different origins. Since the Domain attribute already does this, by
-matching multiple hosts, we can extend it to also match all ports.
-Thereby allowing a cookie with the Domain attribute, a "domain cookie",
-to be accessible from any port value. This behavior extends to
-overwriting cookies as well. Examples:
+Example: 
 
-1. https://example.com:123 sets a cookie: `Set-Cookie: a=domaincookie;
-    Domain=example.com`. The user then visits https://example.com:456
-    which sets the same cookie. This second cookie would match the
-    first and then overwrite it. 
-2. https://example.com:123 sets a cookie `Set-Cookie: a=domaincookie;
-    Domain=example.com`. The user then visits https://example.com:456
-    which sets `Set-Cookie: a=origincookie`. The second cookie would
-    match the first and overwrite it.
+* `https://example.com` sets a cookie `foo=https` and `http://example.com`
+   sets a cookie `foo=http`. Previously this would result in one of
+   the cookies being overwritten by the other. Now, they're considered
+   seperate and when visiting each site users could see their
+   respective cookie. The same holds true for `https://example.com` and
+   `https://example.com:444`, each is a different origin and thus have
+   their own cookies.
 
-Given that these "domain cookies" are less trusted (due to their
-accessibility by different hosts and ports) we should try and prevent
-them from shadowing "origin cookies". Example:
+It's possible that a site operator purposefully wants some cookies to
+be accessible across port boundaries. Because this would weaken the
+origin boundary, by increasing the cookie's scope, we'd want this to be
+an opt-in mechanism. Helpfully there is already an attribute that
+increases a cookie's scope: the `Domain` attribute. We can modify the
+`Domain` attribute slightly such that it not only allows cookies to be
+accessible by different hosts but also by different ports than the
+origin's that set it. For convenience we'll call any cookie with a
+`Domain` attribute a "domain cookie".
 
-1. https://example.com:456 sets a cookie `Set-Cookie: a=origincookie`.
-   The user then visits https://example.com:123 which tries to set a
-   cookie `Set-Cookie: a=domaincookie; Domain=example.com`. The second
-   cookie would fail to be set because the cookie it's attempting to
-   overwrite is an origin cookie.
+Example:
+
+* A corporate network, `https://corp.example`, has various services
+   each running on their own port. Those services share use of a token
+   which allows users to use the services. To get a token a user logs
+   in on `https://corp.example/login/` which creates the cookie
+   `IDToken=a1b2bc3`. Next, to file an expense, the user needs to
+   visit `https://corp.example:8443`, but when they do the IDToken
+   isn't sent because the ports differ (443 vs 8443) and the user is
+   denied access. To remedy this, the IDToken can have the `Domain` 
+   attribute added to it: `IDToken=a1b2d3; Domain=corp.example`.
+   Now when the user visits `https://corp.example:8443` the token
+   is sent and access is granted as expected.
+
+Because any domain cookie is now exposed to multiple origins it means
+a cookie created by one origin can be overwritten by another origin. 
+
+Examples:
+
+1. `https://example.com:123` sets a cookie: `Set-Cookie: 
+    foo=domaincookie; Domain=example.com`. The user then visits 
+    `https://example.com:456` which sets the same cookie. This second
+    cookie would match the first and then overwrite it. 
+2. `https://example.com:123` sets a cookie 
+    `Set-Cookie: foo=domaincookie; Domain=example.com`. The user then
+    visits `https://example.com:456` which sets `Set-Cookie: 
+    foo=origincookie`. The second cookie would match the first an
+    overwrite it.
+    
+Also, because domain cookies are less trusted due to their wider scope,
+we'll want to avoid allowing them to shadow non-domain cookies by
+disallowing domain cookies from co-exiting or overwriting a matching
+non-domain cookie. This is a departure from the status quo in which
+this shadowing behavior is specifically allowed.
+
+Example:
+
+* `https://example.com:456` sets a non-domain cookie`Set-Cookie:
+   foo=origincookie`. The user then visits `https://example.com:123`
+   which tries to set a domain cookie `Set-Cookie: foo=domaincookie;
+   Domain=example.com` This set fails because a domain cookie should
+   never overwrite a matching non-domain cookie.
 
 Finally, we don't ever want to allow a cookie to pass between schemes,
 given the huge security differences between them. So there should be no

@@ -16,27 +16,27 @@ the sites into account. Fourth, cookies should respect schemes. Fifth, cookies
 associated with non-secure schemes should be removed at the end of a user's
 session. Sixth, the definition of a session should be tightened. 
     " name="description">
-<meta content="xml2rfc 3.6.0" name="generator">
+<meta content="xml2rfc 3.11.1" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-west-cookie-incrementalism-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.6.0
-    Python 3.8.7
+  xml2rfc 3.11.1
+    Python 3.9.9
     appdirs 1.4.4
-    ConfigArgParse 1.4
-    google-i18n-address 2.4.0
+    ConfigArgParse 1.5.3
+    google-i18n-address 2.5.0
     html5lib 1.1
     intervaltree 3.1.0
     Jinja2 2.11.3
     kitchen 1.2.6
-    lxml 4.6.2
-    pycairo 1.16.2
+    lxml 4.7.1
+    pycairo 1.20.1
     pycountry 20.7.3
-    pyflakes 2.3.1
-    PyYAML 5.3.1
+    pyflakes 2.4.0
+    PyYAML 5.4.1
     requests 2.25.1
-    setuptools 52.0.0
-    six 1.15.0
+    setuptools 58.2.0
+    six 1.16.0
 -->
 <link href="draft-west-cookie-incrementalism.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -826,11 +826,11 @@ address div.right {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">cookie-incrementalism</td>
-<td class="right">March 2021</td>
+<td class="right">April 2022</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">West</td>
-<td class="center">Expires 30 September 2021</td>
+<td class="center">Expires 24 October 2022</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -843,12 +843,12 @@ address div.right {
 <dd class="internet-draft">draft-west-cookie-incrementalism-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2021-03-29" class="published">29 March 2021</time>
+<time datetime="2022-04-22" class="published">22 April 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2021-09-30">30 September 2021</time></dd>
+<dd class="expires"><time datetime="2022-10-24">24 October 2022</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -889,7 +889,7 @@ session. Sixth, the definition of a session should be tightened.<a href="#sectio
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 30 September 2021.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 24 October 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -898,7 +898,7 @@ session. Sixth, the definition of a session should be tightened.<a href="#sectio
 <a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
         </h2>
 <p id="section-boilerplate.2-1">
-            Copyright (c) 2021 IETF Trust and the persons identified as the
+            Copyright (c) 2022 IETF Trust and the persons identified as the
             document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.2-2">
             This document is subject to BCP 78 and the IETF Trust's Legal
@@ -907,9 +907,9 @@ session. Sixth, the definition of a session should be tightened.<a href="#sectio
             publication of this document. Please review these documents
             carefully, as they describe your rights and restrictions with
             respect to this document. Code Components extracted from this
-            document must include Simplified BSD License text as described in
+            document must include Revised BSD License text as described in
             Section 4.e of the Trust Legal Provisions and are provided without
-            warranty as described in the Simplified BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="toc">
@@ -917,93 +917,93 @@ session. Sixth, the definition of a session should be tightened.<a href="#sectio
         <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
 <a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
         </h2>
-<nav class="toc"><ul class="toc ulEmpty compact">
-<li class="toc ulEmpty compact" id="section-toc.1-1.1">
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
             <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a></p>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.2">
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
             <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-conventions-and-definitions" class="xref">Conventions and Definitions</a></p>
-<ul class="toc ulEmpty compact">
-<li class="toc ulEmpty compact" id="section-toc.1-1.2.2.1">
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
                 <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="xref">2.1</a>.  <a href="#name-conformance" class="xref">Conformance</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.2.2.2">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
                 <p id="section-toc.1-1.2.2.2.1" class="keepWithNext"><a href="#section-2.2" class="xref">2.2</a>.  <a href="#name-syntax" class="xref">Syntax</a></p>
 </li>
             </ul>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.3">
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
             <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-monkey-patches-against-rfc6" class="xref">Monkey-Patches against RFC6265bis</a></p>
-<ul class="toc ulEmpty compact">
-<li class="toc ulEmpty compact" id="section-toc.1-1.3.2.1">
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-lax-by-default" class="xref">"Lax" by Default</a></p>
-<ul class="toc ulEmpty compact">
-<li class="toc ulEmpty compact" id="section-toc.1-1.3.2.1.2.1">
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.1">
                     <p id="section-toc.1-1.3.2.1.2.1.1"><a href="#section-3.1.1" class="xref">3.1.1</a>.  <a href="#name-lax-allowing-unsafe-enforce" class="xref">"Lax-Allowing-Unsafe" Enforcement</a></p>
 </li>
                 </ul>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.2">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
                 <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-requiring-secure-for-samesi" class="xref">Requiring "Secure" for "SameSite=None"</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.3">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
                 <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-schemeful-same-site" class="xref">Schemeful Same-Site</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.4">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4">
                 <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-origin-bound-cookies" class="xref">Origin-Bound Cookies</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.5">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5">
                 <p id="section-toc.1-1.3.2.5.1"><a href="#section-3.5" class="xref">3.5</a>.  <a href="#name-evict-non-secure-cookies" class="xref">Evict Non-Secure Cookies</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.6">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.6">
                 <p id="section-toc.1-1.3.2.6.1"><a href="#section-3.6" class="xref">3.6</a>.  <a href="#name-session-lifetime" class="xref">Session Lifetime</a></p>
 </li>
             </ul>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.4">
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
             <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-security-and-privacy-consid" class="xref">Security and Privacy Considerations</a></p>
-<ul class="toc ulEmpty compact">
-<li class="toc ulEmpty compact" id="section-toc.1-1.4.2.1">
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
                 <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-csrf" class="xref">CSRF</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.4.2.2">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
                 <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="xref">4.2</a>.  <a href="#name-secure-transport" class="xref">Secure Transport</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.4.2.3">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
                 <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="xref">4.3</a>.  <a href="#name-tracking" class="xref">Tracking</a></p>
 </li>
             </ul>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.5">
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
             <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-implementation-consideratio" class="xref">Implementation Considerations</a></p>
-<ul class="toc ulEmpty compact">
-<li class="toc ulEmpty compact" id="section-toc.1-1.5.2.1">
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
                 <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-sequencing" class="xref">Sequencing</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.5.2.2">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
                 <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-deployment" class="xref">Deployment</a></p>
 </li>
             </ul>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.6">
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
             <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-iana-considerations" class="xref">IANA Considerations</a></p>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.7">
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
             <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-references" class="xref">References</a></p>
-<ul class="toc ulEmpty compact">
-<li class="toc ulEmpty compact" id="section-toc.1-1.7.2.1">
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
                 <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="xref">7.1</a>.  <a href="#name-normative-references" class="xref">Normative References</a></p>
 </li>
-              <li class="toc ulEmpty compact" id="section-toc.1-1.7.2.2">
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
                 <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="xref">7.2</a>.  <a href="#name-informative-references" class="xref">Informative References</a></p>
 </li>
             </ul>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.8">
-            <p id="section-toc.1-1.8.1"><a href="#section-appendix.a" class="xref"></a><a href="#name-acknowledgments" class="xref">Acknowledgments</a></p>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#appendix-A" class="xref"></a><a href="#name-acknowledgments" class="xref">Acknowledgments</a></p>
 </li>
-          <li class="toc ulEmpty compact" id="section-toc.1-1.9">
-            <p id="section-toc.1-1.9.1"><a href="#section-appendix.b" class="xref"></a><a href="#name-authors-address" class="xref">Author's Address</a></p>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#appendix-B" class="xref"></a><a href="#name-authors-address" class="xref">Author's Address</a></p>
 </li>
         </ul>
 </nav>
@@ -1133,13 +1133,13 @@ risks of cross-site delivery (see Section 8.2 of <span>[<a href="#RFC6265bis" cl
 developers who didn't make any explicit choice would be protected by default.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
 <p id="section-3.1-2">We could accomplish this goal by first altering the processing algorithm, replacing the current step
 1:<a href="#section-3.1-2" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1-3">
+<div class="alignLeft art-text artwork" id="section-3.1-3">
 <pre>
 1.  Let "enforcement" be "None".
 </pre><a href="#section-3.1-3" class="pilcrow">¶</a>
 </div>
 <p id="section-3.1-4">with the following two steps:<a href="#section-3.1-4" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1-5">
+<div class="alignLeft art-text artwork" id="section-3.1-5">
 <pre>
 1.  Let "enforcement" be "Default".
 
@@ -1148,7 +1148,7 @@ developers who didn't make any explicit choice would be protected by default.<a 
 </pre><a href="#section-3.1-5" class="pilcrow">¶</a>
 </div>
 <p id="section-3.1-6">And then by, altering step 13 of the cookie storage model (Section 5.4 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>) from:<a href="#section-3.1-6" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1-7">
+<div class="alignLeft art-text artwork" id="section-3.1-7">
 <pre>
 13. If the cookie-attribute-list contains an attribute
     with an attribute-name of "SameSite", set the cookie's
@@ -1158,7 +1158,7 @@ developers who didn't make any explicit choice would be protected by default.<a 
 </pre><a href="#section-3.1-7" class="pilcrow">¶</a>
 </div>
 <p id="section-3.1-8">to:<a href="#section-3.1-8" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1-9">
+<div class="alignLeft art-text artwork" id="section-3.1-9">
 <pre>
 13. If the cookie-attribute-list contains an attribute
     with an attribute-name of "SameSite" and an
@@ -1169,7 +1169,7 @@ developers who didn't make any explicit choice would be protected by default.<a 
 </div>
 <p id="section-3.1-10">And finally by altering the fifth bullet point of step 1 of the cookie-string construction algorithm
 in Section 5.5 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> from:<a href="#section-3.1-10" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1-11">
+<div class="alignLeft art-text artwork" id="section-3.1-11">
 <pre>
  *  If the cookie's same-site-flag is not "None", and the HTTP
     request is cross-site (as defined in Section 5.2) then exclude
@@ -1184,7 +1184,7 @@ in Section 5.5 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</spa
 </pre><a href="#section-3.1-11" class="pilcrow">¶</a>
 </div>
 <p id="section-3.1-12">to:<a href="#section-3.1-12" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1-13">
+<div class="alignLeft art-text artwork" id="section-3.1-13">
 <pre>
  *  If the cookie's same-site-flag is not "None", and the HTTP
     request is cross-site (as defined in Section 5.2) then exclude
@@ -1232,7 +1232,7 @@ cookies that did not explicitly specify <code>SameSite=Lax</code> (i.e., those w
 minutes seems reasonable).<a href="#section-3.1.1-5" class="pilcrow">¶</a></p>
 <p id="section-3.1.1-6">This is done by further modifying the previously mentioned fifth bullet point of step 1 of the
 cookie-string construction algorithm in Section 5.5 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> from:<a href="#section-3.1.1-6" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1.1-7">
+<div class="alignLeft art-text artwork" id="section-3.1.1-7">
 <pre>
  *  If the cookie's same-site-flag is not "None", and the HTTP
     request is cross-site (as defined in Section 5.2) then exclude
@@ -1247,7 +1247,7 @@ cookie-string construction algorithm in Section 5.5 of <span>[<a href="#RFC6265b
 </pre><a href="#section-3.1.1-7" class="pilcrow">¶</a>
 </div>
 <p id="section-3.1.1-8">to:<a href="#section-3.1.1-8" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.1.1-9">
+<div class="alignLeft art-text artwork" id="section-3.1.1-9">
 <pre>
  *  If the cookie's same-site-flag is not "None", and the HTTP
     request is cross-site (as defined in Section 5.2) then exclude
@@ -1286,7 +1286,7 @@ to same-site requests) require secure transport.<a href="#section-3.2-2" class="
 <p id="section-3.2-3">That is, we can require that any cookie which asserts <code>SameSite=None</code> must also assert the <code>Secure</code>
 attribute (Section 4.1.2.5 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>) by altering the storage model defined in Section 5.4 of
 <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span>, inserting the following step after the existing step 14:<a href="#section-3.2-3" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.2-4">
+<div class="alignLeft art-text artwork" id="section-3.2-4">
 <pre>
 15. If the cookie's "same-site-flag" is "None", abort
     these steps and ignore the cookie entirely unless
@@ -1311,7 +1311,7 @@ an origin. In the places where a we return an empty string for a non-existent
 "site for cookies" we should instead return an origin set to a freshly
 generated globally unique identifier.
 Then replace the same-site calculation algorithm with the following:<a href="#section-3.3-2" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.3-3">
+<div class="alignLeft art-text artwork" id="section-3.3-3">
 <pre>
 Two origins, A and B, are considered same-site if the following algorithm returns true:
 1.  If A and B are both scheme/host/port triples then
@@ -1347,67 +1347,127 @@ from "have the same registrable domain" (or "is an exact match for") to say
 <a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-origin-bound-cookies" class="section-name selfRef">Origin-Bound Cookies</a>
         </h3>
 <p id="section-3.4-1">Cookies are one of the few components of the web platform that are not
-scoped to the origin by default. The <code>Secure</code> attribute can scope a
-cookie to secure schemes, and cookie prefixes ("__Secure-" and
-"__Host-") can tighten that boundary, but these mechanisms are
-little-used. Cookies that lack these protections easily move between
-schemes (and even with these mechanisms will still move between ports).
-The same cookies may be delivered to both the HTTP and HTTPS variants of
-a given domain, even though the security properties of them differ
-radically. As Section 8.6 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> points out, this gives
-network attackers the ability to influence otherwise secured traffic by
-modifying user state that flows to secure origins, and gives them
-insight into user behavior, as securely-set cookies that lack the
-<code>Secure</code> attribute likewise flow from secure origins to non-secure
-origins. Additionally, cookies are delivered to all ports of a given
-domain, which can't necessarily be trusted as Section 8.5 of
-<span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> points out. Similarly to above, attackers operating on a
-different port could influence otherwise secured traffic.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
-<p id="section-3.4-2">We should remedy this defect by storing both a "scheme" and "port"
+scoped to the origin by default. This difference in scoping means that
+cookies have weaken confidentiality and integrity compared with other
+storage APIs on the web platform.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4-2">Examples:<a href="#section-3.4-2" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-3.4-3">
+<li id="section-3.4-3.1">
+            <code>https://somesite.com</code> sets a simple cookie, <code>secret=123456</code>,
+ which contains private information about a user. Information that
+ an attacker wishes to learn. To do so the attacker
+ man-in-the-middles the user, and then tricks them into visiting
+ <code>http://somesite.com</code> (note the insecure scheme). When the user
+ visits that page their browser will send the <code>secret</code> cookie and
+ the attacker can see it.<a href="#section-3.4-3.1" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.4-3.2">Similarly, if the attacker has somehow compromised a service running
+ on a different port on the same server, let's say port 345, as
+ <code>https://somesite.com</code> then they could trick the user into visiting
+ <code>https://somesite.com:345</code>, the user's browser will send the <code>secret</code>
+ cookie, and once again the attacker can see it.<a href="#section-3.4-3.2" class="pilcrow">¶</a>
+</li>
+        </ol>
+<p id="section-3.4-4">Even more, through the same techniques, an attacker can also modify
+a user's cookies, sending a <code>Set-Cookie</code> field instead of simply
+eavesdropping.<a href="#section-3.4-4" class="pilcrow">¶</a></p>
+<p id="section-3.4-5">All of these examples are possible because cookies by default do not
+care about the scheme or port of their connection. As long as the host
+matches the cookie will be accessible.<a href="#section-3.4-5" class="pilcrow">¶</a></p>
+<p id="section-3.4-6">Some of these shortcomings can be alleviated: the <code>Secure</code> attribute
+scopes a cookie to only be accesible on secure schemes and the cookie
+prefixes, <code>__Secure-</code> and <code>__Host-</code>, can tighten that boundary more.
+While these solve the problem shown in the first example, they are all
+opt-in and are not always used. They also do nothing to help solve
+the port problem shown in the example two. In fact, there are currently
+no mechanisms that can strengthen cookies' port boundaries.<a href="#section-3.4-6" class="pilcrow">¶</a></p>
+<p id="section-3.4-7">These weaknesses in cookies gives network attackers the ability to spy
+upon users and influence otherwise secured traffic by modifying users'
+state as Sections 8.5 and 8.6 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> point out.<a href="#section-3.4-7" class="pilcrow">¶</a></p>
+<p id="section-3.4-8">We should remedy this defect by storing both a "scheme" and "port"
 component along with the cookie, and use those components in cookies'
 matching algorithms to ensure that a cookie is only sent to the origin
-that originally set it, thus keeping origins' state separate by default.<a href="#section-3.4-2" class="pilcrow">¶</a></p>
-<p id="section-3.4-3">It's possible that a site operator purposefully wants their cookies to
-be usable across ports. For these situations it seems reasonable to
-allow a server to specify that a given cookie should be accessible by
-different origins. Since the Domain attribute already does this, by
-matching multiple hosts, we can extend it to also match all ports.
-Thereby allowing a cookie with the Domain attribute, a "domain cookie",
-to be accessible from any port value. This behavior extends to
-overwriting cookies as well. Examples:<a href="#section-3.4-3" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-3.4-4">
-<li id="section-3.4-4.1">https://example.com:123 sets a cookie: <code>Set-Cookie: a=domaincookie;
- Domain=example.com</code>. The user then visits https://example.com:456
- which sets the same cookie. This second cookie would match the
- first and then overwrite it.<a href="#section-3.4-4.1" class="pilcrow">¶</a>
+that originally set it, thus keeping origins' state separate by
+default.<a href="#section-3.4-8" class="pilcrow">¶</a></p>
+<p id="section-3.4-9">Example:<a href="#section-3.4-9" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.4-10.1">
+            <code>https://example.com</code> sets a cookie <code>foo=https</code> and <code>http://example.com</code>
+ sets a cookie <code>foo=http</code>. Previously this would result in one of
+ the cookies being overwritten by the other. Now, they're considered
+ seperate and when visiting each site users could see their
+ respective cookie. The same holds true for <code>https://example.com</code> and
+ <code>https://example.com:444</code>, each is a different origin and thus have
+ their own cookies.<a href="#section-3.4-10.1" class="pilcrow">¶</a>
 </li>
-          <li id="section-3.4-4.2">https://example.com:123 sets a cookie <code>Set-Cookie: a=domaincookie;
- Domain=example.com</code>. The user then visits https://example.com:456
- which sets <code>Set-Cookie: a=origincookie</code>. The second cookie would
- match the first and overwrite it.<a href="#section-3.4-4.2" class="pilcrow">¶</a>
+        </ul>
+<p id="section-3.4-11">It's possible that a site operator purposefully wants some cookies to
+be accessible across port boundaries. Because this would weaken the
+origin boundary, by increasing the cookie's scope, we'd want this to be
+an opt-in mechanism. Helpfully there is already an attribute that
+increases a cookie's scope: the <code>Domain</code> attribute. We can modify the
+<code>Domain</code> attribute slightly such that it not only allows cookies to be
+accessible by different hosts but also by different ports than the
+origin's that set it. For convenience we'll call any cookie with a
+<code>Domain</code> attribute a "domain cookie".<a href="#section-3.4-11" class="pilcrow">¶</a></p>
+<p id="section-3.4-12">Example:<a href="#section-3.4-12" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.4-13.1">A corporate network, <code>https://corp.example</code>, has various services
+ each running on their own port. Those services share use of a token
+ which allows users to use the services. To get a token a user logs
+ in on <code>https://corp.example/login/</code> which creates the cookie
+ <code>IDToken=a1b2bc3</code>. Next, to file an expense, the user needs to
+ visit <code>https://corp.example:8443</code>, but when they do the IDToken
+ isn't sent because the ports differ (443 vs 8443) and the user is
+ denied access. To remedy this, the IDToken can have the <code>Domain</code> 
+ attribute added to it: <code>IDToken=a1b2d3; Domain=corp.example</code>.
+ Now when the user visits <code>https://corp.example:8443</code> the token
+ is sent and access is granted as expected.<a href="#section-3.4-13.1" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-3.4-14">Because any domain cookie is now exposed to multiple origins it means
+a cookie created by one origin can be overwritten by another origin.<a href="#section-3.4-14" class="pilcrow">¶</a></p>
+<p id="section-3.4-15">Examples:<a href="#section-3.4-15" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-3.4-16">
+<li id="section-3.4-16.1">
+            <code>https://example.com:123</code> sets a cookie: <code>Set-Cookie: 
+ foo=domaincookie; Domain=example.com</code>. The user then visits 
+ <code>https://example.com:456</code> which sets the same cookie. This second
+ cookie would match the first and then overwrite it.<a href="#section-3.4-16.1" class="pilcrow">¶</a>
+</li>
+          <li id="section-3.4-16.2">
+            <code>https://example.com:123</code> sets a cookie 
+ <code>Set-Cookie: foo=domaincookie; Domain=example.com</code>. The user then
+ visits <code>https://example.com:456</code> which sets <code>Set-Cookie: 
+ foo=origincookie</code>. The second cookie would match the first an
+ overwrite it.<a href="#section-3.4-16.2" class="pilcrow">¶</a>
 </li>
         </ol>
-<p id="section-3.4-5">Given that these "domain cookies" are less trusted (due to their
-accessibility by different hosts and ports) we should try and prevent
-them from shadowing "origin cookies". Example:<a href="#section-3.4-5" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-3.4-6">
-<li id="section-3.4-6.1">https://example.com:456 sets a cookie <code>Set-Cookie: a=origincookie</code>.
-The user then visits https://example.com:123 which tries to set a
-cookie <code>Set-Cookie: a=domaincookie; Domain=example.com</code>. The second
-cookie would fail to be set because the cookie it's attempting to
-overwrite is an origin cookie.<a href="#section-3.4-6.1" class="pilcrow">¶</a>
+<p id="section-3.4-17">Also, because domain cookies are less trusted due to their wider scope,
+we'll want to avoid allowing them to shadow non-domain cookies by
+disallowing domain cookies from co-exiting or overwriting a matching
+non-domain cookie. This is a departure from the status quo in which
+this shadowing behavior is specifically allowed.<a href="#section-3.4-17" class="pilcrow">¶</a></p>
+<p id="section-3.4-18">Example:<a href="#section-3.4-18" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.4-19.1">
+            <code>https://example.com:456</code> sets a non-domain cookie<code>Set-Cookie:
+ foo=origincookie</code>. The user then visits <code>https://example.com:123</code>
+ which tries to set a domain cookie <code>Set-Cookie: foo=domaincookie;
+ Domain=example.com</code> This set fails because a domain cookie should
+ never overwrite a matching non-domain cookie.<a href="#section-3.4-19.1" class="pilcrow">¶</a>
 </li>
-        </ol>
-<p id="section-3.4-7">Finally, we don't ever want to allow a cookie to pass between schemes,
+        </ul>
+<p id="section-3.4-20">Finally, we don't ever want to allow a cookie to pass between schemes,
 given the huge security differences between them. So there should be no
 way for a server to specify that a given cookie should be sent to a
-different scheme.<a href="#section-3.4-7" class="pilcrow">¶</a></p>
-<p id="section-3.4-8">How we accomplish this is as follows:<a href="#section-3.4-8" class="pilcrow">¶</a></p>
-<p id="section-3.4-9">First, add the concept of port matching which helps to simplify checking
+different scheme.<a href="#section-3.4-20" class="pilcrow">¶</a></p>
+<p id="section-3.4-21">How we accomplish this is as follows:<a href="#section-3.4-21" class="pilcrow">¶</a></p>
+<p id="section-3.4-22">First, add the concept of port matching which helps to simplify checking
 if a cookie would match a port value. We can do that by adding a new
 section under 5.1 (this new section depends on the modification to 5.4
-below)<a href="#section-3.4-9" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-10">
+below)<a href="#section-3.4-22" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-23">
 <pre>
 5.1.5 Port matching
 
@@ -1416,12 +1476,12 @@ conditions are true:
   1. The integer exactly matches the cookie's port value.
 
   2. The cookie's host-only-flag is false.
-</pre><a href="#section-3.4-10" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-23" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-11">We also want to add a sub-algorithm to protect origin cookies from being
+<p id="section-3.4-24">We also want to add a sub-algorithm to protect origin cookies from being
 overwritten/shadowed by domain cookies. This'll be run during the
-creation of new cookies in a later step.<a href="#section-3.4-11" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-12">
+creation of new cookies in a later step.<a href="#section-3.4-24" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-25">
 <pre>
 5.1.6 New Cookie does not Shadow or Overwrite Origin-only Cookies
 
@@ -1461,35 +1521,35 @@ a=origincookie`. The user then visits https://account.site.example
 which tries to set a cookie `Set-Cookie: a=domaincookie;
 Domain=site.example`. The second cookie would fail to be set because
 the cookie would shadow "a=origincookie".
-</pre><a href="#section-3.4-12" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-25" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-13">Next, alter the storage model in Section 5.4 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> by
+<p id="section-3.4-26">Next, alter the storage model in Section 5.4 of <span>[<a href="#RFC6265bis" class="xref">RFC6265bis</a>]</span> by
 adding "scheme" and "port" to the list of fields the user agent stores
 about each cookie, and setting them. Also, let's refer to the newly
 created cookie by "new-cookie" by altering step 3 of the algorithm
-from:<a href="#section-3.4-13" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-14">
+from:<a href="#section-3.4-26" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-27">
 <pre>
 3.  Create a new cookie with name cookie-name, value cookie-value. Set
     the creation-time and the last-access-time to the current date and
     time.
-</pre><a href="#section-3.4-14" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-27" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-15">to:<a href="#section-3.4-15" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-16">
+<p id="section-3.4-28">to:<a href="#section-3.4-28" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-29">
 <pre>
 3.  Create a new cookie ("new-cookie") with name cookie-name, value
     cookie-value. Set the creation-time and the last-access-time to the
     current date and time, set the scheme to the request-uri's origin's
     scheme component, and set the port to the request-uri's origin's
     port component.
-</pre><a href="#section-3.4-16" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-29" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-17">References to the cookie should also be updated to use "new-cookie" in
-steps 3-20 as required.<a href="#section-3.4-17" class="pilcrow">¶</a></p>
-<p id="section-3.4-18">To prevent "domain cookies" from shadowing "origin cookies" we alter
-step 13 from<a href="#section-3.4-18" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-19">
+<p id="section-3.4-30">References to the cookie should also be updated to use "new-cookie" in
+steps 3-20 as required.<a href="#section-3.4-30" class="pilcrow">¶</a></p>
+<p id="section-3.4-31">To prevent "domain cookies" from shadowing "origin cookies" we alter
+step 13 from<a href="#section-3.4-31" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-32">
 <pre>
 13. If the cookie's secure-only-flag is false, and the scheme component
     of request-uri does not denote a "secure" protocol, then abort
@@ -1514,22 +1574,22 @@ step 13 from<a href="#section-3.4-18" class="pilcrow">¶</a></p>
     path of '/login', a non-secure cookie named 'a' could be set for a
     path of '/' or '/foo', but not for a path of '/login' or
     '/login/en'.
-</pre><a href="#section-3.4-19" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-32" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-20">to:<a href="#section-3.4-20" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-21">
+<p id="section-3.4-33">to:<a href="#section-3.4-33" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-34">
 <pre>
 13. If the algorithm specified by 5.1.6 New Cookie does not Shadow or
     Overwrite Origin-only Cookies returns false, then abort these steps
     and ignore the cookie entirely.
-</pre><a href="#section-3.4-21" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-34" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-22">Note: Because all cookies are now scoped by scheme it is unnecessary to
+<p id="section-3.4-35">Note: Because all cookies are now scoped by scheme it is unnecessary to
 protect a secure scheme's cookies from an insecure scheme's cookies and
-thus we can drop the related checks in the original step 13.<a href="#section-3.4-22" class="pilcrow">¶</a></p>
-<p id="section-3.4-23">To incorporate the new fields and "domain cookie" port matching, alter
-step 19 of the same algorithm from<a href="#section-3.4-23" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-24">
+thus we can drop the related checks in the original step 13.<a href="#section-3.4-35" class="pilcrow">¶</a></p>
+<p id="section-3.4-36">To incorporate the new fields and "domain cookie" port matching, alter
+step 19 of the same algorithm from<a href="#section-3.4-36" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-37">
 <pre>
 19. If the cookie store contains a cookie with the same name, domain,
     host-only-flag, and path as the newly-created cookie:
@@ -1547,10 +1607,10 @@ step 19 of the same algorithm from<a href="#section-3.4-23" class="pilcrow">¶</
        the creation-time of the old-cookie.
 
     4. Remove the old-cookie from the cookie store.
-</pre><a href="#section-3.4-24" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-37" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-25">to:<a href="#section-3.4-25" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-26">
+<p id="section-3.4-38">to:<a href="#section-3.4-38" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-39">
 <pre>
 19. If the cookie store contains a cookie ("old-cookie") with the same
     name, scheme, domain, path, and for which either of the following
@@ -1575,11 +1635,11 @@ step 19 of the same algorithm from<a href="#section-3.4-23" class="pilcrow">¶</
        the creation-time of the old-cookie.
 
     3. Remove the old-cookie from the cookie store.
-</pre><a href="#section-3.4-26" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-39" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-27">With cookie storage taken care of now we move onto sending cookies. In
-section 5.5 alter step 1 from:<a href="#section-3.4-27" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-28">
+<p id="section-3.4-40">With cookie storage taken care of now we move onto sending cookies. In
+section 5.5 alter step 1 from:<a href="#section-3.4-40" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-41">
 <pre>
 1.  Let cookie-list be the set of cookies from the cookie store that
     meets all of the following requirements:
@@ -1605,10 +1665,10 @@ section 5.5 alter step 1 from:<a href="#section-3.4-27" class="pilcrow">¶</a></
       the protocol makes use of transport-layer security, such as SSL
       or TLS. For example, most user agents consider "https" to be a
       scheme that denotes a secure protocol.
-</pre><a href="#section-3.4-28" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-41" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-29">to:<a href="#section-3.4-29" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-3.4-30">
+<p id="section-3.4-42">to:<a href="#section-3.4-42" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.4-43">
 <pre>
 19. Let cookie-list be the set of cookies from the cookie store that
     meets all of the following requirements:
@@ -1630,15 +1690,15 @@ section 5.5 alter step 1 from:<a href="#section-3.4-27" class="pilcrow">¶</a></
 
     * The request-uri's origin's scheme component is identical to the
       cookie's scheme
-</pre><a href="#section-3.4-30" class="pilcrow">¶</a>
+</pre><a href="#section-3.4-43" class="pilcrow">¶</a>
 </div>
-<p id="section-3.4-31">At which point cookies will be bound to their origin (but have an
+<p id="section-3.4-44">At which point cookies will be bound to their origin (but have an
 ability to cross port thresholds via the Domain attribute if needed).
 There are remaining clean up task such as updating the "Weak
 Confidentiality" and "Weak Integrity" section, modifying the eviction
 algorithm to prefer domain cookies/non-secure schemes, updating
 references to Secure (and its uses), etc that will need to tended to
-before this can be adopted into a full specs doc.<a href="#section-3.4-31" class="pilcrow">¶</a></p>
+before this can be adopted into a full specs doc.<a href="#section-3.4-44" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="evict-nonsecure">
@@ -1878,7 +1938,7 @@ cross-site-but-not-cross-party cookies by defaulting to something like that docu
 <dd class="break"></dd>
 <dt id="RFC6265bis">[RFC6265bis]</dt>
         <dd>
-<span class="refAuthor">West, M.</span> and <span class="refAuthor">J. Wilander</span>, <span class="refTitle">"Cookies: HTTP State Management Mechanism"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-rfc6265bis-07</span>, <time datetime="2020-12-07" class="refDate">7 December 2020</time>, <span>&lt;<a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-rfc6265bis-07.txt">https://www.ietf.org/archive/id/draft-ietf-httpbis-rfc6265bis-07.txt</a>&gt;</span>. </dd>
+<span class="refAuthor">Chen, L.</span>, <span class="refAuthor">Englehardt, S.</span>, <span class="refAuthor">West, M.</span>, and <span class="refAuthor">J. Wilander</span>, <span class="refTitle">"Cookies: HTTP State Management Mechanism"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-rfc6265bis-09</span>, <time datetime="2021-10-19" class="refDate">19 October 2021</time>, <span>&lt;<a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-rfc6265bis-09.txt">https://www.ietf.org/archive/id/draft-ietf-httpbis-rfc6265bis-09.txt</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
       <dd>
@@ -1931,21 +1991,21 @@ cross-site-but-not-cross-party cookies by defaulting to something like that docu
 </section>
 </section>
 <div id="acknowledgments">
-<section id="section-appendix.a">
+<section id="appendix-A">
       <h2 id="name-acknowledgments">
 <a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
       </h2>
-<p id="section-appendix.a-1">Conversations with a number of folks at 2019's HTTP Workshop helped me clarify my thinking around
+<p id="appendix-A-1">Conversations with a number of folks at 2019's HTTP Workshop helped me clarify my thinking around
 the incremental improvements we can make to cookies. In particular, Martin Thomson and Anne van
-Kesteren provided insightful feedback.<a href="#section-appendix.a-1" class="pilcrow">¶</a></p>
-<p id="section-appendix.a-2">Lily Chen has been instrumental in initial deployments of the <code>SameSite</code> changes described in 
+Kesteren provided insightful feedback.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<p id="appendix-A-2">Lily Chen has been instrumental in initial deployments of the <code>SameSite</code> changes described in 
 <a href="#lax-default" class="xref">Section 3.1</a> and <a href="#require-secure" class="xref">Section 3.2</a>, proving that incremental changes to cookies can be
-successfully shipped.<a href="#section-appendix.a-2" class="pilcrow">¶</a></p>
-<p id="section-appendix.a-3">Steven Bingler contributed the "Schemeful SameSite" proposal described in <a href="#schemeful-samesite" class="xref">Section 3.3</a>.<a href="#section-appendix.a-3" class="pilcrow">¶</a></p>
+successfully shipped.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
+<p id="appendix-A-3">Steven Bingler contributed the "Schemeful SameSite" proposal described in <a href="#schemeful-samesite" class="xref">Section 3.3</a>.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="authors-addresses">
-<section id="section-appendix.b">
+<section id="appendix-B">
       <h2 id="name-authors-address">
 <a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
       </h2>
