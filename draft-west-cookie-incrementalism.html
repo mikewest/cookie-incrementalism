@@ -1489,20 +1489,18 @@ This algorithm protects any existing origin-only cookies from being
 overwritten or shadowed by a new cookie ("new-cookie") with the Domain
 attribute and is as follows:
 
-If the new-cookie's host-only-flag is true, then return true.
+1.  If the new-cookie's host-only-flag is true, then return true.
+2.  If the new-cookie's host-only-flag is false, then return false
+    if the cookie store contains at least one cookie ("equiv-cookie")
+    that meets all of the following criteria:
 
-If the new-cookie's host-only-flag is false, then return false if the
-cookie store contains at least one cookie ("equiv-cookie") that meets
-all of the following criteria:
-  1. Equiv-cookie's name and scheme are equal to new-cookie's name and
-     scheme.
+    1.  Equiv-cookie's name and scheme are equal to new-cookie's name
+        and scheme.
+    2.  Equiv-cookie's host-only-flag is true.
+    3.  Equiv-cookie's domain domain-matches the domain of new-cookie.
+        (Note: this is an asymmetrical comparison)
 
-  2. Equiv-cookie's host-only-flag is true.
-
-  3. Equiv-cookie's domain domain-matches the domain of new-cookie.
-  (Note: this is an asymmetrical comparison)
-
-Otherwise return true
+    Otherwise return true
 
 Notice the asymmetric comparison during the domain-matching. It can be
 helpful to think of domain-matching as: "A domain-matches B when A is
