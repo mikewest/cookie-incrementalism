@@ -422,10 +422,10 @@ Examples:
     the attacker can see it.
 
 2. Similarly, if the attacker has somehow compromised a service running
-    on a different port on the same server, let's say port 345, as
-    `https://somesite.com` then they could trick the user into visiting
-    `https://somesite.com:345`, the user's browser will send the `secret`
-    cookie, and once again the attacker can see it.
+   on a different port on the same server, let's say port 345, as
+   `https://somesite.com` then they could trick the user into visiting
+   `https://somesite.com:345`, the user's browser will send the `secret`
+   cookie, and once again the attacker can see it.
 
 Even more, through the same techniques, an attacker can also modify
 a user's cookies, sending a `Set-Cookie` field instead of simply
@@ -476,45 +476,43 @@ origin's that set it. For convenience we'll call any cookie with a
 Example:
 
 * A corporate network, `https://corp.example`, has various services
-   each running on their own port. Those services share use of a token
-   which allows users to use the services. To get a token a user logs
-   in on `https://corp.example/login/` which creates the cookie
-   `IDToken=a1b2bc3`. Next, to file an expense, the user needs to
-   visit `https://corp.example:8443`, but when they do the IDToken
-   isn't sent because the ports differ (443 vs 8443) and the user is
-   denied access. To remedy this, the IDToken can have the `Domain` 
-   attribute added to it: `IDToken=a1b2d3; Domain=corp.example`.
-   Now when the user visits `https://corp.example:8443` the token
-   is sent and access is granted as expected.
+  each running on their own port. Those services share use of a token
+  which allows users to use the services. To get a token a user logs
+  in on `https://corp.example/login/` which creates the cookie
+  `IDToken=a1b2bc3`. Next, to file an expense, the user needs to
+  visit `https://corp.example:8443`, but when they do the IDToken
+  isn't sent because the ports differ (443 vs 8443) and the user is
+  denied access. To remedy this, the IDToken can have the `Domain`
+  attribute added to it: `IDToken=a1b2d3; Domain=corp.example`.
+  Now when the user visits `https://corp.example:8443` the token
+  is sent and access is granted as expected.
 
 Because any domain cookie is now exposed to multiple origins it means
 a cookie created by one origin can be overwritten by another origin. 
 
-Examples:
+Example:
 
-1. `https://example.com:123` sets a cookie: `Set-Cookie: 
-    foo=domaincookie; Domain=example.com`. The user then visits 
-    `https://example.com:456` which sets the same cookie. This second
-    cookie would match the first and then overwrite it. 
-2. `https://example.com:123` sets a cookie 
-    `Set-Cookie: foo=domaincookie; Domain=example.com`. The user then
-    visits `https://example.com:456` which sets `Set-Cookie: 
-    foo=origincookie`. The second cookie would match the first an
-    overwrite it.
+* `https://example.com:123` sets a cookie: `Set-Cookie:
+  foo=domaincookie; Domain=example.com`. The user then visits
+  `https://example.com:456` which sets the same cookie. This second
+  cookie would match the first and then overwrite it.
     
 Also, because domain cookies are less trusted due to their wider scope,
-we'll want to avoid allowing them to shadow non-domain cookies by
-disallowing domain cookies from co-exiting or overwriting a matching
-non-domain cookie. This is a departure from the status quo in which
-this shadowing behavior is specifically allowed.
+we'll want to avoid them shadowing non-domain cookies by disallowing
+domain cookies from being sent if a matching non-domain cookie exists.
+This is a departure from the status quo in which this shadowing
+behavior is specifically allowed.
 
 Example:
 
-* `https://example.com:456` sets a non-domain cookie`Set-Cookie:
-   foo=origincookie`. The user then visits `https://example.com:123`
-   which tries to set a domain cookie `Set-Cookie: foo=domaincookie;
-   Domain=example.com` This set fails because a domain cookie should
-   never overwrite a matching non-domain cookie.
+* `https://example.com:456` sets a non-domain cookie `Set-Cookie:
+  foo=origincookie`. The user then visits `https://example.com:123`
+  which sets a domain cookie `Set-Cookie: foo=domaincookie;
+  Domain=example.com`. When the user returns to
+  `https://example.com:456` only `foo=origincookie` is sent and the
+  domain cookie is blocked from being sent. If the user were to then
+  visit `https://sub.example.com:456` `foo=domaincookie` would be sent
+  since the domain would no longer be shadowing a non-domain cookie.
 
 Finally, we don't ever want to allow a cookie to pass between schemes,
 given the huge security differences between them. So there should be no
@@ -533,59 +531,14 @@ below)
 
 An integer port-matches a given cookie if any of the following
 conditions are true:
-  1. The integer exactly matches the cookie's port value.
+  1. The cookie's host-only-flag is false.
 
-  2. The cookie's host-only-flag is false.
-~~~
-
-We also want to add a sub-algorithm to protect origin cookies from being
-overwritten/shadowed by domain cookies. This'll be run during the
-creation of new cookies in a later step.
-
-~~~
-5.1.6 New Cookie does not Shadow or Overwrite Origin-only Cookies
-
-This algorithm protects any existing origin-only cookies from being
-overwritten or shadowed by a new cookie ("new-cookie") with the Domain
-attribute and is as follows:
-
-1.  If the new-cookie's host-only-flag is true, then return true.
-2.  If the new-cookie's host-only-flag is false, then return false
-    if the cookie store contains at least one cookie ("equiv-cookie")
-    that meets all of the following criteria: 
-    
-    1.  Equiv-cookie's name and scheme are equal to new-cookie's name
-        and scheme.
-    2.  Equiv-cookie's host-only-flag is true.
-    3.  Equiv-cookie's domain domain-matches the domain of new-cookie.
-        (Note: this is an asymmetrical comparison) 
-    
-    Otherwise return true
-
-Notice the asymmetric comparison during the domain-matching. It can be
-helpful to think of domain-matching as: "A domain-matches B when A is
-equivalent to or a sub-domain of B". Since a cookie with the Domain
-attribute is sent to all hosts that are equivalent to or a sub-domain
-of its Domain's value, this asymmetric comparison prevents a cookie
-with the Domain attribute from being set when it would be sent to any
-host that also contains an origin-only cookie.
-
-Note: This comparison intentionally ignores the "path" component. The
-intent is to protect a more tightly scoped origin bound cookie across
-the entire origin.
-
-Example: https://landing.site.example sets a cookie `Set-Cookie:
-a=origincookie`. The user then visits https://account.site.example
-which tries to set a cookie `Set-Cookie: a=domaincookie;
-Domain=site.example`. The second cookie would fail to be set because
-the cookie would shadow "a=origincookie".
+  2. The integer exactly matches the cookie's port value.
 ~~~
 
 Next, alter the storage model in Section 5.4 of {{RFC6265bis}} by
 adding "scheme" and "port" to the list of fields the user agent stores
-about each cookie, and setting them. Also, let's refer to the newly
-created cookie by "new-cookie" by altering step 3 of the algorithm
-from:
+about each cookie, and setting them.
 
 ~~~
 3.  Create a new cookie with name cookie-name, value cookie-value. Set
@@ -596,56 +549,16 @@ from:
 to: 
 
 ~~~
-3.  Create a new cookie ("new-cookie") with name cookie-name, value
-    cookie-value. Set the creation-time and the last-access-time to the
-    current date and time, set the scheme to the request-uri's origin's
-    scheme component, and set the port to the request-uri's origin's
-    port component.
+3.  Create a new cookie with name cookie-name, value cookie-value. Set
+    the creation-time and the last-access-time to the current date and
+    time, set the scheme to the request-uri's origin's scheme
+    component, and set the port to the request-uri's origin's port
+    component.
 ~~~
 
-References to the cookie should also be updated to use "new-cookie" in
-steps 3-20 as required.
-
-To prevent "domain cookies" from shadowing "origin cookies" we alter
-step 13 from
-
-~~~
-13. If the cookie's secure-only-flag is false, and the scheme component
-    of request-uri does not denote a "secure" protocol, then abort
-    these steps and ignore the cookie entirely if the cookie store
-    contains one or more cookies that meet all of the following
-    criteria:
-
-    1. Their name matches the name of the newly-created cookie.
-
-    2. Their secure-only-flag is true.
-
-    3. Their domain domain-matches the domain of the newly-created
-       cookie, or vice-versa.
-
-    4. The path of the newly-created cookie path-matches the path of
-       the existing cookie.
-
-    Note: The path comparison is not symmetric, ensuring only that a
-    newly-created, non-secure cookie does not overlay an existing
-    secure cookie, providing some mitigation against cookie-fixing
-    attacks.  That is, given an existing secure cookie named 'a' with a
-    path of '/login', a non-secure cookie named 'a' could be set for a
-    path of '/' or '/foo', but not for a path of '/login' or
-    '/login/en'.
-~~~
-
-to:
-
-~~~
-13. If the algorithm specified by 5.1.6 New Cookie does not Shadow or
-    Overwrite Origin-only Cookies returns false, then abort these steps
-    and ignore the cookie entirely.
-~~~
-
-Note: Because all cookies are now scoped by scheme it is unnecessary to
+Because all cookies are now scoped by scheme it is unnecessary to
 protect a secure scheme's cookies from an insecure scheme's cookies and
-thus we can drop the related checks in the original step 13.
+thus we can remove step 13.
 
 To incorporate the new fields and "domain cookie" port matching, alter
 step 19 of the same algorithm from
@@ -673,19 +586,8 @@ to:
 
 ~~~
 19. If the cookie store contains a cookie ("old-cookie") with the same
-    name, scheme, domain, path, and for which either of the following
-    conditions is true:
-
-    * The old-cookie's port port-matches the new-cookie.
-
-    * The new-cookie's port port-matches the old-cookie.
-
-    (Notice that this algorithm maintains the invariant that there are
-    no two cookies in the cookie store with the same name, scheme,
-    domain, and path and for which one cookie's port port-matches the
-    other cookie.)
-
-    Then:
+    name, scheme, domain, host-only-flag, path, and for which
+    the old-cookie's port port-matches the newly-created cookie:
 
     1. If the newly-created cookie was received from a "non-HTTP" API
        and the old-cookie's http-only-flag is true, abort these steps
@@ -695,6 +597,8 @@ to:
        the creation-time of the old-cookie.
 
     3. Remove the old-cookie from the cookie store.
+    (Notice that this algorithm maintains the invariant that there
+    is at most one such cookie.)
 ~~~
 
 With cookie storage taken care of now we move onto sending cookies. In
@@ -730,7 +634,7 @@ section 5.5 alter step 1 from:
 to: 
 
 ~~~
-19. Let cookie-list be the set of cookies from the cookie store that
+1. Let cookie-list be the set of cookies from the cookie store that
     meets all of the following requirements:
 
     * Either:
@@ -750,6 +654,22 @@ to:
 
     * The request-uri's origin's scheme component is identical to the
       cookie's scheme
+~~~
+
+Finally, insert a new step afterward to remove any domain cookies which
+would shadow non-domain cookies.
+
+~~~
+2. For each cookie in cookie-list:
+    1. If cookie's host-only-flag is false then remove cookie from
+    cookie-list if cookie-list contains any cookies that meet all of
+    the following criteria:
+       * their host-only-flag is true
+       * their name matches cookie's name.
+
+Note: This comparison intentionally ignores the "path" component. The
+intent is to protect a more tightly scoped origin bound cookie across
+the entire origin.
 ~~~
 
 At which point cookies will be bound to their origin (but have an
