@@ -414,12 +414,12 @@ storage APIs on the web platform.
 Examples:
 
 1. `https://somesite.com` sets a simple cookie, `secret=123456`,
-    which contains private information about a user. Information that
-    an attacker wishes to learn. To do so the attacker
-    man-in-the-middles the user, and then tricks them into visiting
-    `http://somesite.com` (note the insecure scheme). When the user
-    visits that page their browser will send the `secret` cookie and
-    the attacker can see it.
+   which contains private information about a user. Information that
+   an attacker wishes to learn. To do so the attacker
+   man-in-the-middles the user, and then tricks them into visiting
+   `http://somesite.com` (note the insecure scheme). When the user
+   visits that page their browser will send the `secret` cookie and
+   the attacker can see it.
 
 2. Similarly, if the attacker has somehow compromised a service running
    on a different port on the same server, let's say port 345, as
@@ -437,10 +437,10 @@ matches the cookie will be accessible.
 
 Some of these shortcomings can be alleviated: the `Secure` attribute
 scopes a cookie to only be accesible on secure schemes and the cookie
-prefixes, `__Secure-` and `__Host-`, can tighten that boundary more.
+prefixes, `__Secure-` and `__Host-`, ensure that `Secure` was set.
 While these solve the problem shown in the first example, they are all
 opt-in and are not always used. They also do nothing to help solve
-the port problem shown in the example two. In fact, there are currently
+the port problem shown in the example 2. In fact, there are currently
 no mechanisms that can strengthen cookies' port boundaries.
 
 These weaknesses in cookies gives network attackers the ability to spy
@@ -501,29 +501,39 @@ Also, because domain cookies are less trusted due to their wider scope,
 we'll want to avoid them shadowing non-domain cookies by disallowing
 domain cookies from being sent if a matching non-domain cookie exists.
 This is a departure from the status quo in which this shadowing
-behavior is specifically allowed.
+behavior is specifically allowed. This protection extends over the
+entire origin.
 
-Example:
+Examples:
 
-* `https://example.com:456` sets a non-domain cookie `Set-Cookie:
-  foo=origincookie`. The user then visits `https://example.com:123`
-  which sets a domain cookie `Set-Cookie: foo=domaincookie;
-  Domain=example.com`. When the user returns to
-  `https://example.com:456` only `foo=origincookie` is sent and the
-  domain cookie is blocked from being sent. If the user were to then
-  visit `https://sub.example.com:456` `foo=domaincookie` would be sent
-  since the domain would no longer be shadowing a non-domain cookie.
+1. `https://example.com:456` sets a non-domain cookie `Set-Cookie:
+   foo=origincookie`. The user then visits `https://example.com:123`
+   which sets a domain cookie `Set-Cookie: foo=domaincookie;
+   Domain=example.com`. When the user returns to
+   `https://example.com:456` only `foo=origincookie` is sent and the
+   domain cookie is blocked from being sent. If the user were to then
+   visit `https://sub.example.com:456` `foo=domaincookie` would be sent
+   since the domain would no longer be shadowing a non-domain cookie.
+
+2. `https://example.com:456` sets a non-domain cookie with a path
+   `Set-Cookie: foo=origincookie; Path=/bar`. The user then visits
+   `https://example.com:123` which sets a domain cookie `Set-Cookie:
+   foo=domaincookie; Domain=example.com`. When the user returns to
+   `https://example.com:456` no cookies are sent because the domain
+   cookie is blocked by the existence of a matching non-domain cookie
+   anywhere on the origin. The non-domain cookie is not sent because
+   the path does not match.
 
 Finally, we don't ever want to allow a cookie to pass between schemes,
 given the huge security differences between them. So there should be no
 way for a server to specify that a given cookie should be sent to a
 different scheme.
 
-How we accomplish this is as follows:
+We accomplish this as follows:
 
 First, add the concept of port matching which helps to simplify checking
 if a cookie would match a port value. We can do that by adding a new
-section under 5.1 (this new section depends on the modification to 5.4
+section under 5.1 (this new section depends on the modification to 5.5
 below)
 
 ~~~
@@ -536,12 +546,12 @@ conditions are true:
   2. The integer exactly matches the cookie's port value.
 ~~~
 
-Next, alter the storage model in Section 5.4 of {{RFC6265bis}} by
+Next, alter the storage model in Section 5.5 of {{RFC6265bis}} by
 adding "scheme" and "port" to the list of fields the user agent stores
 about each cookie, and setting them.
 
 ~~~
-3.  Create a new cookie with name cookie-name, value cookie-value. Set
+5.  Create a new cookie with name cookie-name, value cookie-value. Set
     the creation-time and the last-access-time to the current date and
     time.
 ~~~
@@ -549,22 +559,18 @@ about each cookie, and setting them.
 to: 
 
 ~~~
-3.  Create a new cookie with name cookie-name, value cookie-value. Set
+5.  Create a new cookie with name cookie-name, value cookie-value. Set
     the creation-time and the last-access-time to the current date and
     time, set the scheme to the request-uri's origin's scheme
     component, and set the port to the request-uri's origin's port
     component.
 ~~~
 
-Because all cookies are now scoped by scheme it is unnecessary to
-protect a secure scheme's cookies from an insecure scheme's cookies and
-thus we can remove step 13.
-
 To incorporate the new fields and "domain cookie" port matching, alter
-step 19 of the same algorithm from
+step 22 of the same algorithm from
 
 ~~~
-19. If the cookie store contains a cookie with the same name, domain,
+22. If the cookie store contains a cookie with the same name, domain,
     host-only-flag, and path as the newly-created cookie:
 
     1. Let old-cookie be the existing cookie with the same name,
@@ -585,7 +591,7 @@ step 19 of the same algorithm from
 to:
 
 ~~~
-19. If the cookie store contains a cookie ("old-cookie") with the same
+22. If the cookie store contains a cookie ("old-cookie") with the same
     name, scheme, domain, host-only-flag, path, and for which
     the old-cookie's port port-matches the newly-created cookie:
 
@@ -602,39 +608,10 @@ to:
 ~~~
 
 With cookie storage taken care of now we move onto sending cookies. In
-section 5.5 alter step 1 from:
+section 5.6.1 replace step 1 with the following:
 
 ~~~
-1.  Let cookie-list be the set of cookies from the cookie store that
-    meets all of the following requirements:
-
-    * Either:
-
-      - The cookie's host-only-flag is true and the canonicalized
-        request-host is identical to the cookie's domain.
-
-      Or:
-
-      - The cookie's host-only-flag is false and the canonicalized
-        request-host domain-matches the cookie's domain.
-
-    * The request-uri's path path-matches the cookie's path.
-
-    * If the cookie's secure-only-flag is true, then the request-uri's
-      scheme must denote a "secure" protocol (as defined by the user
-      agent).
-    
-      NOTE: The notion of a "secure" protocol is not defined by this
-      document.  Typically, user agents consider a protocol secure if
-      the protocol makes use of transport-layer security, such as SSL
-      or TLS. For example, most user agents consider "https" to be a
-      scheme that denotes a secure protocol.
-~~~
-
-to: 
-
-~~~
-1. Let cookie-list be the set of cookies from the cookie store that
+1. Let initial-cookie-list be the set of cookies from the cookie store that
     meets all of the following requirements:
 
     * Either:
@@ -647,8 +624,6 @@ to:
       - The cookie's host-only-flag is false, and the canonicalized
         request-host domain-matches the cookie's domain.
 
-    * The request-uri's path path-matches the cookie's path.
-
     * The request-uri's origin's port component port-matches the
       cookie.
 
@@ -656,20 +631,39 @@ to:
       cookie's scheme
 ~~~
 
-Finally, insert a new step afterward to remove any domain cookies which
-would shadow non-domain cookies.
+This steps collects all cookies that could potentially be sent on this
+request. Next add a new step that filters this list down to the cookies
+that should actually be sent.
 
 ~~~
-2. For each cookie in cookie-list:
-    1. If cookie's host-only-flag is false then remove cookie from
-    cookie-list if cookie-list contains any cookies that meet all of
-    the following criteria:
-       * their host-only-flag is true
-       * their name matches cookie's name.
+2. Let cookie-list be a new empty list.
+   For each cookie in initial-cookie-list:
+   1. Continue to the next cookie if cookie's host-only-flag is false
+      and initial-cookie-list contains any cookies that meet all of
+      the following criteria:
+        * their host-only-flag is true.
+        * their name matches cookie's name.
+   2. Add cookie to cookie-list if it meets all of the following
+      requirements:
+        * The retrieval's URI's path path-matches the cookie's path.
+        
+        * If the cookie's http-only-flag is true, then exclude the
+          cookie if the retrieval's type is "non-HTTP".
+          
+        * If the cookie's same-site-flag is not "None" and the retrieval's same-site
+          status is "cross-site", then exclude the cookie unless all of the
+          following conditions are met:
 
-Note: This comparison intentionally ignores the "path" component. The
-intent is to protect a more tightly scoped origin bound cookie across
-the entire origin.
+          * The retrieval's type is "HTTP".
+          * The same-site-flag is "Lax" or "Default".
+          * The HTTP request associated with the retrieval uses a "safe" method.
+          * The target browsing context of the HTTP request associated with the
+            retrieval is a top-level browsing context.
+            
+Note: While checking for cookies with the name same but different
+host-only-flags the comparison intentionally ignores the "path"
+componet. The intent is to protect a more tightly scope origin bound
+cookie across the entire origin.
 ~~~
 
 At which point cookies will be bound to their origin (but have an
