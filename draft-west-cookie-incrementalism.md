@@ -611,15 +611,15 @@ With cookie storage taken care of now we move onto sending cookies. In
 section 5.6.1 replace step 1 with the following:
 
 ~~~
-1. Let initial-cookie-list be the set of cookies from the cookie store that
-    meets all of the following requirements:
+1. Let potential-cookie-list be the set of cookies from the cookie
+   store that meets all of the following requirements:
 
     * Either:
 
       - The cookie's host-only-flag is true, and the canonicalized
         request-host is identical to the cookie's domain.
 
-    Or:
+      Or:
 
       - The cookie's host-only-flag is false, and the canonicalized
         request-host domain-matches the cookie's domain.
@@ -637,9 +637,9 @@ that should actually be sent.
 
 ~~~
 2. Let cookie-list be a new empty list.
-   For each cookie in initial-cookie-list:
+   For each cookie in potential-cookie-list:
    1. Continue to the next cookie if cookie's host-only-flag is false
-      and initial-cookie-list contains any cookies that meet all of
+      and potential-cookie-list contains any cookies that meet all of
       the following criteria:
         * their host-only-flag is true.
         * their name matches cookie's name.
@@ -650,21 +650,25 @@ that should actually be sent.
         * If the cookie's http-only-flag is true, then exclude the
           cookie if the retrieval's type is "non-HTTP".
           
-        * If the cookie's same-site-flag is not "None" and the retrieval's same-site
-          status is "cross-site", then exclude the cookie unless all of the
-          following conditions are met:
+        * If the cookie's same-site-flag is not "None" and the HTTP
+          request is cross-site (as defined in Section 5.2), then
+          exclude the cookie unless all of the following conditions are
+          met:
 
           * The retrieval's type is "HTTP".
           * The same-site-flag is "Lax" or "Default".
-          * The HTTP request associated with the retrieval uses a "safe" method.
-          * The target browsing context of the HTTP request associated with the
-            retrieval is a top-level browsing context.
+          * The HTTP request associated with the retrieval uses a
+            "safe" method.
+          * The target browsing context of the HTTP request associated
+            with the retrieval is a top-level browsing context.
             
 Note: While checking for cookies with the name same but different
 host-only-flags the comparison intentionally ignores the "path"
 componet. The intent is to protect a more tightly scope origin bound
 cookie across the entire origin.
 ~~~
+
+Renumber all subsequent steps.
 
 At which point cookies will be bound to their origin (but have an
 ability to cross port thresholds via the Domain attribute if needed).
