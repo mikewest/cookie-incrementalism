@@ -153,11 +153,14 @@ the near-term. User agents should:
 
    This is spelled out in more detail in {{schemeful-samesite}}.
 
-4. Separate cookies by scheme. That is, a given cookie set from `http://example.com/` should be
-   considered distinct from the same cookie set from `https://example.com/`, preventing the former
-   from influencing the state of the latter.
+4. Separate cookies by origin. That is, a given cookie set from
+   `http://example.com/` should be considered distinct from the same
+   cookie set from `https://example.com/` which should again be
+   considered distinct from the same cookie set from
+   `https://example.com:123/`, preventing any origin from influencing the
+   state of any other.
 
-   This is spelled out in more detail in {{scheming-cookies}}.
+   This is spelled out in more detail in {{origin-bound-cookies}}.
 
 5. Evict non-secure cookies when a user's session on a non-secure site ends, thereby reducing the
    timespan over which a user broadcasts a stable identifier to the network.
@@ -401,85 +404,279 @@ from "have the same registrable domain" (or "is an exact match for") to say
 
 Note: The request's URL when establishing a WebSockets connection has scheme "http" or "https", rather than "ws" or "wss". FETCH maps schemes when constructing the request. This mapping allows same-site cookies to be sent with WebSockets.
 
-## Scheming Cookies {#scheming-cookies}
+## Origin-Bound Cookies {#origin-bound-cookies}
 
-Cookies are one of the very few components of the web platform that ignore scheme by default. The
-`Secure` attribute can lock a cookie to secure schemes, and the `__Secure-` prefix can harden that
-boundary, but these mechanisms are little-used, and cookies lacking these protections flow across
-scheme boundaries. They are delivered to both the HTTP and HTTPS variants of a given domain, even
-though their security properties differ radically. As Section 8.6 of
-{{RFC6265bis}} points out, this gives network attackers the ability to influence otherwise secured
-traffic by modifying user state that flows to secure origins, and, of course, insight into user
-behavior as securely-set cookies that lack the `Secure` attribute likewise flow from secure origins
-to non-secure variants.
+Cookies are one of the few components of the web platform that are not
+scoped to the origin by default. This difference in scoping means that
+cookies have weaken confidentiality and integrity compared with other
+storage APIs on the web platform.
 
-We should remedy this defect by storing a `scheme` component along with the cookie, and using that
-component in cookies' matching algorithms to ensure that secure and non-secure origins' state is
-clearly distinguishable and separate. This is accomplished as follows:
+Examples:
 
-First, alter the Storage Model defined in Section 5.4 of {{RFC6265bis}} by adding `scheme` to the
-list of fields the user agent stores about each cookie, and setting it when creating a cookie by
-altering step 2 of the same algorithm from:
+1. `https://somesite.com` sets a simple cookie, `secret=123456`,
+   which contains private information about a user. Information that
+   an attacker wishes to learn. To do so the attacker
+   man-in-the-middles the user, and then tricks them into visiting
+   `http://somesite.com` (note the insecure scheme). When the user
+   visits that page their browser will send the `secret` cookie and
+   the attacker can see it.
+
+2. Similarly, if the attacker has somehow compromised a service running
+   on a different port on the same server, let's say port 345, as
+   `https://somesite.com` then they could trick the user into visiting
+   `https://somesite.com:345`, the user's browser will send the `secret`
+   cookie, and once again the attacker can see it.
+
+Even more, through the same techniques, an attacker can also modify
+a user's cookies, sending a `Set-Cookie` field instead of simply
+eavesdropping.
+
+All of these examples are possible because cookies by default do not
+care about the scheme or port of their connection. As long as the host
+matches the cookie will be accessible.
+
+Some of these shortcomings can be alleviated: the `Secure` attribute
+scopes a cookie to only be accesible on secure schemes and the cookie
+prefixes, `__Secure-` and `__Host-`, ensure that `Secure` was set.
+While these solve the problem shown in the first example, they are all
+opt-in and are not always used. They also do nothing to help solve
+the port problem shown in the example 2. In fact, there are currently
+no mechanisms that can strengthen cookies' port boundaries.
+
+These weaknesses in cookies gives network attackers the ability to spy
+upon users and influence otherwise secured traffic by modifying users'
+state as Sections 8.5 and 8.6 of {{RFC6265bis}} point out.
+
+We should remedy this defect by storing both a "scheme" and "port"
+component along with the cookie, and use those components in cookies'
+matching algorithms to ensure that a cookie is only sent to the origin
+that originally set it, thus keeping origins' state separate by
+default.
+
+Example: 
+
+* `https://example.com` sets a cookie `foo=https` and `http://example.com`
+   sets a cookie `foo=http`. Previously this would result in one of
+   the cookies being overwritten by the other. Now, they're considered
+   seperate and when visiting each site users could see their
+   respective cookie. The same holds true for `https://example.com` and
+   `https://example.com:444`, each is a different origin and thus have
+   their own cookies.
+
+It's possible that a site operator purposefully wants some cookies to
+be accessible across port boundaries. Because this would weaken the
+origin boundary, by increasing the cookie's scope, we'd want this to be
+an opt-in mechanism. Helpfully there is already an attribute that
+increases a cookie's scope: the `Domain` attribute. We can modify the
+`Domain` attribute slightly such that it not only allows cookies to be
+accessible by different hosts but also by different ports than the
+origin's that set it. For convenience we'll call any cookie with a
+`Domain` attribute a "domain cookie".
+
+Example:
+
+* A corporate network, `https://corp.example`, has various services
+  each running on their own port. Those services share use of a token
+  which allows users to use the services. To get a token a user logs
+  in on `https://corp.example/login/` which creates the cookie
+  `IDToken=a1b2bc3`. Next, to file an expense, the user needs to
+  visit `https://corp.example:8443`, but when they do the IDToken
+  isn't sent because the ports differ (443 vs 8443) and the user is
+  denied access. To remedy this, the IDToken can have the `Domain`
+  attribute added to it: `IDToken=a1b2d3; Domain=corp.example`.
+  Now when the user visits `https://corp.example:8443` the token
+  is sent and access is granted as expected.
+
+Because any domain cookie is now exposed to multiple origins it means
+a cookie created by one origin can be overwritten by another origin. 
+
+Example:
+
+* `https://example.com:123` sets a cookie: `Set-Cookie:
+  foo=domaincookie; Domain=example.com`. The user then visits
+  `https://example.com:456` which sets the same cookie. This second
+  cookie would match the first and then overwrite it.
+    
+Also, because domain cookies are less trusted due to their wider scope,
+we'll want to avoid them shadowing non-domain cookies by disallowing
+domain cookies from being sent if a matching non-domain cookie exists.
+This is a departure from the status quo in which this shadowing
+behavior is specifically allowed. This protection extends over the
+entire origin.
+
+Examples:
+
+1. `https://example.com:456` sets a non-domain cookie `Set-Cookie:
+   foo=origincookie`. The user then visits `https://example.com:123`
+   which sets a domain cookie `Set-Cookie: foo=domaincookie;
+   Domain=example.com`. When the user returns to
+   `https://example.com:456` only `foo=origincookie` is sent and the
+   domain cookie is blocked from being sent. If the user were to then
+   visit `https://sub.example.com:456` `foo=domaincookie` would be sent
+   since the domain would no longer be shadowing a non-domain cookie.
+
+2. `https://example.com:456` sets a non-domain cookie with a path
+   `Set-Cookie: foo=origincookie; Path=/bar`. The user then visits
+   `https://example.com:123` which sets a domain cookie `Set-Cookie:
+   foo=domaincookie; Domain=example.com`. When the user returns to
+   `https://example.com:456` no cookies are sent because the domain
+   cookie is blocked by the existence of a matching non-domain cookie
+   anywhere on the origin. The non-domain cookie is not sent because
+   the path does not match.
+
+Finally, we don't ever want to allow a cookie to pass between schemes,
+given the huge security differences between them. So there should be no
+way for a server to specify that a given cookie should be sent to a
+different scheme.
+
+We accomplish this as follows:
+
+First, add the concept of port matching which helps to simplify checking
+if a cookie would match a port value. We can do that by adding a new
+section under 5.1 (this new section depends on the modification to 5.5
+below)
 
 ~~~
-2.   Create a new cookie with name cookie-name, value cookie-value.
-     Set the creation-time and the last-access-time to the current
-     date and time.
+5.1.5 Port matching 
+
+An integer port-matches a given cookie if any of the following
+conditions are true:
+  1. The cookie's host-only-flag is false.
+
+  2. The integer exactly matches the cookie's port value.
+~~~
+
+Next, alter the storage model in Section 5.5 of {{RFC6265bis}} by
+adding "scheme" and "port" to the list of fields the user agent stores
+about each cookie, and setting them.
+
+~~~
+5.  Create a new cookie with name cookie-name, value cookie-value. Set
+    the creation-time and the last-access-time to the current date and
+    time.
+~~~
+
+to: 
+
+~~~
+5.  Create a new cookie with name cookie-name, value cookie-value. Set
+    the creation-time and the last-access-time to the current date and
+    time, set the scheme to the request-uri's origin's scheme
+    component, and set the port to the request-uri's origin's port
+    component.
+~~~
+
+To incorporate the new fields and "domain cookie" port matching, alter
+step 22 of the same algorithm from
+
+~~~
+22. If the cookie store contains a cookie with the same name, domain,
+    host-only-flag, and path as the newly-created cookie:
+
+    1. Let old-cookie be the existing cookie with the same name,
+       domain, host-only-flag, and path as the newly-created cookie.
+       (Notice that this algorithm maintains the invariant that there
+       is at most one such cookie.)
+
+    2. If the newly-created cookie was received from a "non-HTTP" API
+       and the old-cookie's http-only-flag is true, abort these steps
+       and ignore the newly created cookie entirely.
+
+    3. Update the creation-time of the newly-created cookie to match
+       the creation-time of the old-cookie.
+
+    4. Remove the old-cookie from the cookie store.
 ~~~
 
 to:
 
 ~~~
-2.   Create a new cookie with name cookie-name, value cookie-value.
-     Set the creation-time and the last-access-time to the current
-     date and time. Set the scheme to request-uri's origin's scheme
-     component.
+22. If the cookie store contains a cookie ("old-cookie") with the same
+    name, scheme, domain, host-only-flag, path, and for which
+    the old-cookie's port port-matches the newly-created cookie:
+
+    1. If the newly-created cookie was received from a "non-HTTP" API
+       and the old-cookie's http-only-flag is true, abort these steps
+       and ignore the newly created cookie entirely.
+
+    2. Update the creation-time of the newly-created cookie to match
+       the creation-time of the old-cookie.
+
+    3. Remove the old-cookie from the cookie store.
+    (Notice that this algorithm maintains the invariant that there
+    is at most one such cookie.)
 ~~~
 
-Likewise alter step 17 of the same algorithm from:
+With cookie storage taken care of now we move onto sending cookies. In
+section 5.6.1 replace step 1 with the following:
 
 ~~~
-17.  If the cookie store contains a cookie with the same name,
-     domain, host-only-flag, and path as the newly-created cookie:
+1. Let potential-cookie-list be the set of cookies from the cookie
+   store that meets all of the following requirements:
+
+    * Either:
+
+      - The cookie's host-only-flag is true, and the canonicalized
+        request-host is identical to the cookie's domain.
+
+      Or:
+
+      - The cookie's host-only-flag is false, and the canonicalized
+        request-host domain-matches the cookie's domain.
+
+    * The request-uri's origin's port component port-matches the
+      cookie.
+
+    * The request-uri's origin's scheme component is identical to the
+      cookie's scheme
 ~~~
 
-to:
+This steps collects all cookies that could potentially be sent on this
+request. Next add a new step that filters this list down to the cookies
+that should actually be sent.
 
 ~~~
-17.  If the cookie store contains a cookie with the same name, scheme,
-     domain, host-only-flag, and path as the newly-created cookie:
+2. Let cookie-list be a new empty list.
+   For each cookie in potential-cookie-list:
+   1. Continue to the next cookie if cookie's host-only-flag is false
+      and potential-cookie-list contains any cookies that meet all of
+      the following criteria:
+        * their host-only-flag is true.
+        * their name matches cookie's name.
+   2. Add cookie to cookie-list if it meets all of the following
+      requirements:
+        * The retrieval's URI's path path-matches the cookie's path.
+        
+        * If the cookie's http-only-flag is true, then exclude the
+          cookie if the retrieval's type is "non-HTTP".
+          
+        * If the cookie's same-site-flag is not "None" and the HTTP
+          request is cross-site (as defined in Section 5.2), then
+          exclude the cookie unless all of the following conditions are
+          met:
+
+          * The retrieval's type is "HTTP".
+          * The same-site-flag is "Lax" or "Default".
+          * The HTTP request associated with the retrieval uses a
+            "safe" method.
+          * The target browsing context of the HTTP request associated
+            with the retrieval is a top-level browsing context.
+            
+Note: While checking for cookies with the name same but different
+host-only-flags the comparison intentionally ignores the "path"
+componet. The intent is to protect a more tightly scope origin bound
+cookie across the entire origin.
 ~~~
 
-And step 17.1 from:
+Renumber all subsequent steps.
 
-~~~
-17.1.  Let old-cookie be the existing cookie with the same name,
-       domain, host-only-flag, and path as the newly-created
-       cookie.  (Notice that this algorithm maintains the invariant
-       that there is at most one such cookie.)
-~~~
-
-to:
-
-~~~
-17.1.  Let old-cookie be the existing cookie with the same name, scheme,
-       domain, host-only-flag, and path as the newly-created
-       cookie.  (Notice that this algorithm maintains the invariant
-       that there is at most one such cookie.)
-~~~
-
-Second, alter The Cookie Header algorithm defined in Section 5.5 of {{RFC6265bis}} to take the
-`scheme` into account when deciding which cookies to deliver by adding another condition to the
-list in Step 1 of the algorithm:
-
-~~~
-*   The cookies' `scheme` matches the scheme component of request-uri's origin.
-~~~
-
-This seems like the minimal set of changes necessary. We could do other cleanup, including removing
-the `Secure` attribute, as this mechanism obviates it entirely, altering the eviction algorithm to
-prefer discarding non-secure schemes, etc.
-
+At which point cookies will be bound to their origin (but have an
+ability to cross port thresholds via the Domain attribute if needed).
+There are remaining clean up task such as updating the "Weak
+Confidentiality" and "Weak Integrity" section, modifying the eviction
+algorithm to prefer domain cookies/non-secure schemes, updating
+references to Secure (and its uses), etc that will need to tended to
+before this can be adopted into a full specs doc. 
 
 ## Evict Non-Secure Cookies {#evict-nonsecure}
 
